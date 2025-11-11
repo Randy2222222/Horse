@@ -22,6 +22,24 @@
   <input type="file" id="pdfFile" accept=".pdf">
   <p id="pdfStatus">No file uploaded yet.</p>
 </section>
+  <script>
+  // Wait until the page loads
+  document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.getElementById('fileInput');
+
+    // When a file is chosen
+    fileInput.addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (file) {
+        console.log('File selected:', file.name);
+        alert(`File selected: ${file.name}`);
+        // Later we'll parse the PDF here
+      } else {
+        console.log('No file selected');
+      }
+    });
+  });
+</script>
 
 <script src="pdfReader.js"></script>
   <script src="js/main.js"></script>
