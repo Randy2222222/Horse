@@ -1,10 +1,45 @@
 body {
-  background-color: #000;      /* black background */
-  color: #fff;                 /* white text */
+  background-color: #000; /* black background */
+  color: #fff;            /* white text */
   font-family: Arial, sans-serif;
   text-align: center;
   margin: 0;
   padding: 0;
+}
+
+/* Headings */
+h1, h2, h3 {
+  color: #fff;
+}
+
+/* Upload and button sections */
+input[type="file"], button {
+  background-color: #222;
+  color: #fff;
+  border: 1px solid #555;
+  padding: 8px 12px;
+  margin: 8px;
+  border-radius: 4px;
+}
+
+input[type="file"]:hover, button:hover {
+  background-color: #444;
+}
+
+/* Graph area */
+canvas {
+  background-color: #fff; /* keep graph area white */
+  border: 2px solid #666;
+  margin-top: 20px;
+}
+
+/* Container for sections if you use them */
+section {
+  background-color: #111;
+  border: 1px solid #333;
+  padding: 20px;
+  margin: 20px;
+  border-radius: 8px;
 }
 
 input[type="file"] {
