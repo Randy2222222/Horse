@@ -43,6 +43,7 @@ section {
   border-radius: 8px;
 }
 
+/* File input styling */
 input[type="file"] {
   background-color: #222;
   color: #fff;
@@ -56,11 +57,13 @@ p, h1, h2, h3 {
   color: #fff;
 }
 
+/* Graph box */
 canvas {
   background-color: #fff;  /* white box for graph */
   border: 1px solid #444;
 }
 
+/* Header bar */
 header {
   background-color: #004aad;
   color: #fff;
@@ -68,10 +71,12 @@ header {
   padding: 1em;
 }
 
+/* Output section */
 #program-output {
   padding: 20px;
 }
 
+/* Dark race info blocks */
 .race-block {
   background: #111;  /* dark gray for readability */
   border: 1px solid #333;
@@ -79,12 +84,8 @@ header {
   padding: 10px;
   margin-bottom: 20px;
 }
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 10px;
-  margin-bottom: 20px;
-}
 
+/* Graph container sizing */
 .graph-container {
   width: 100%;
   height: 100px;
