@@ -21,7 +21,7 @@ p, h1, h2, h3 {
 }
 
 canvas {
-  background-color: #111;  /* dark gray behind the graph */
+  background-color: #fff;  /* white box for graph */
   border: 1px solid #444;
 }
 
