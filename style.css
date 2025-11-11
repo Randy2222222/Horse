@@ -73,8 +73,8 @@ header {
 }
 
 .race-block {
-  background: white;
-  border: 1px solid #ccc;
+  background: #111;  /* dark gray for readability */
+  border: 1px solid #333;
   border-radius: 6px;
   padding: 10px;
   margin-bottom: 20px;
