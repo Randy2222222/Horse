@@ -90,3 +90,13 @@ header {
   width: 100%;
   height: 100px;
 }
+
+body::before {
+  content: "✅ CSS is connected";
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  color: lime;
+  font-weight: bold;
+  z-index: 9999;
+}
