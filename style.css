@@ -1,9 +1,28 @@
 body {
+  background-color: #000;      /* black background */
+  color: #fff;                 /* white text */
   font-family: Arial, sans-serif;
-  background-color: #f8f8f8;
-  color: #222;
+  text-align: center;
   margin: 0;
   padding: 0;
+}
+
+input[type="file"] {
+  background-color: #222;
+  color: #fff;
+  border: 1px solid #555;
+  padding: 8px;
+  border-radius: 5px;
+  margin-top: 20px;
+}
+
+p, h1, h2, h3 {
+  color: #fff;
+}
+
+canvas {
+  background-color: #111;  /* dark gray behind the graph */
+  border: 1px solid #444;
 }
 
 header {
