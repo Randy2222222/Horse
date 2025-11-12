@@ -63,12 +63,22 @@ canvas {
   border: 1px solid #444;
 }
 
-/* Header bar */
+/* Header bar (thinner and sleeker) */
 header {
   background-color: #004aad;
   color: #fff;
   text-align: center;
-  padding: 1em;
+  padding: 0.5em 0;      /* thinner than 1em */
+  font-size: 1.4em;      /* slightly larger text */
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;   /* small gap below header */
+}
+
+header h1 {
+  margin: 0;             /* remove extra top/bottom space */
+  padding: 0;            /* tighten text spacing */
+  line-height: 1.2em;    /* keeps it vertically compact */
 }
 
 /* Output section */
