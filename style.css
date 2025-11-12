@@ -91,6 +91,7 @@ header {
   height: 100px;
 }
 
+/* ✅ Test to confirm CSS is actually loading */
 body::before {
   content: "✅ CSS is connected";
   position: fixed;
