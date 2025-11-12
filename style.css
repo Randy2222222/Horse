@@ -137,3 +137,13 @@ header h1 {
   font-size: 0.9em;
   color: #ccc;
 }
+
+/* Move upload box closer to header */
+header {
+  margin-bottom: 0;
+  padding-bottom: 0.3em;
+}
+
+#pdf-upload {
+  margin-top: 4px; /* just a tiny space under header */
+}
