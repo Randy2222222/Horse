@@ -1,4 +1,4 @@
-/* Base page settings */
+/* Remove all default top spacing */
 html, body {
   margin: 0;
   padding: 0;
@@ -6,27 +6,30 @@ html, body {
   color: #fff;
   font-family: Arial, sans-serif;
   text-align: center;
+  height: 100%;
+  overflow-x: hidden;
 }
 
-/* Header (blue banner) */
+/* Keep blue header at very top */
 header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
   background-color: #004aad;
   color: #fff;
   text-align: center;
-  padding: 0.2em 0;      /* thin height */
+  padding: 0.4em 0;
   margin: 0;
-  line-height: 1;        /* tighten blue bar */
-}
-
-header h1 {
-  margin: 0;
-  padding: 0;
   font-size: 1.4em;
-  line-height: 1.2em;    /* vertically centered text */
+  font-weight: bold;
+  z-index: 1000;
 }
 
-/* Upload box (right below header) */
+/* Prevent content from hiding under header */
 #pdf-upload {
+  margin-top: 70px; /* push down to clear header height */
+}
   background-color: #111;
   border: 1px solid #333;
   border-radius: 6px;
