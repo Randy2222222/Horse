@@ -36,6 +36,14 @@ header h1 {
   max-width: 350px;
 }
 
+/* Responsive adjustment for small screens */
+@media (max-width: 600px) {
+  #pdf-upload {
+    width: 80%;
+    max-width: 300px;
+  }
+}
+
 /* Upload section text and file input */
 #pdf-upload h2 {
   margin-top: 4px;
