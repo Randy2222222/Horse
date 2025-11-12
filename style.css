@@ -10,26 +10,25 @@ html, body {
   overflow-x: hidden;
 }
 
-/* Blue banner (header) */
+/* Thinner blue banner */
 header {
-  position: relative;          /* normal placement */
-  background-color: #004aad;   /* blue */
+  position: relative;
+  background-color: #004aad;
   color: #fff;
   text-align: center;
-  padding: 0.4em 0;            /* thin vertical space */
-  margin: 0;                   /* no outside gaps */
-  font-size: 1.4em;
+  padding: 0.25em 0 0.2em 0;  /* slightly thinner overall, trims bottom */
+  margin: 0;
+  font-size: 1.35em;           /* slightly smaller text to match */
   font-weight: bold;
-  z-index: 1000;
 }
 
-/* Upload box directly below header */
+/* Upload box — moved up slightly to match new banner height */
 #pdf-upload {
   background-color: #111;
   border: 1px solid #333;
   border-radius: 6px;
   padding: 10px 0 12px 0;
-  margin: 8px auto 20px auto;  /* small space below banner */
+  margin: 4px auto 20px auto;  /* smaller top margin to pull it closer */
   width: 60%;
   max-width: 450px;
 }
