@@ -107,15 +107,33 @@ header h1 {
   height: 100px;
 }
 
-/* Upload section box positioning */
+
+/* Compact and narrow PDF upload section */
 #pdf-upload {
-  margin-top: 20px;         /* moves it up closer to header */
-  background-color: #111;   /* match dark theme */
+  background-color: #111;
   border: 1px solid #333;
-  border-radius: 8px;
-  padding: 15px;
-  width: 80%;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  border-radius: 6px;
+  padding: 8px 0 12px 0;
+  margin: 10px auto 20px auto;  /* tight to header */
+  width: 60%;                   /* narrower box */
+  max-width: 450px;             /* limits on larger screens */
+}
+
+/* Title spacing */
+#pdf-upload h2 {
+  margin-top: 4px;
+  margin-bottom: 6px;
+  font-size: 1.2em;
+}
+
+/* File input and status text spacing */
+#pdf-upload input[type="file"] {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+#pdfStatus {
+  margin-top: 6px;
+  font-size: 0.9em;
+  color: #ccc;
 }
