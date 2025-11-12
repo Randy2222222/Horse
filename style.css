@@ -1,4 +1,4 @@
-/* Remove all default top spacing */
+/* Base page settings */
 html, body {
   margin: 0;
   padding: 0;
@@ -6,29 +6,32 @@ html, body {
   color: #fff;
   font-family: Arial, sans-serif;
   text-align: center;
-  height: 100%;
-  overflow-x: hidden;
 }
 
-/* Thinner blue banner */
+/* Header (blue banner) */
 header {
-  position: relative;
   background-color: #004aad;
   color: #fff;
   text-align: center;
-  padding: 0.25em 0 0.2em 0;  /* slightly thinner overall, trims bottom */
+  padding: 0.2em 0;      /* thin height */
   margin: 0;
-  font-size: 1.35em;           /* slightly smaller text to match */
-  font-weight: bold;
+  line-height: 1;        /* tighten blue bar */
 }
 
-/* Upload box — moved up slightly to match new banner height */
+header h1 {
+  margin: 0;
+  padding: 0;
+  font-size: 1.4em;
+  line-height: 1.2em;    /* vertically centered text */
+}
+
+/* Upload box (right below header) */
 #pdf-upload {
   background-color: #111;
   border: 1px solid #333;
   border-radius: 6px;
   padding: 10px 0 12px 0;
-  margin: 4px auto 20px auto;  /* smaller top margin to pull it closer */
+  margin: 2px auto 20px auto;   /* tiny space under header */
   width: 60%;
   max-width: 450px;
 }
