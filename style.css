@@ -28,13 +28,11 @@ header {
 
 /* Prevent content from hiding under header */
 #pdf-upload {
-  margin-top: 70px; /* push down to clear header height */
-
   background-color: #111;
   border: 1px solid #333;
   border-radius: 6px;
   padding: 10px 0 12px 0;
-  margin: 2px auto 20px auto;   /* tiny space under header */
+  margin: 70px auto 20px auto;   /* tiny space under header */
   width: 60%;
   max-width: 450px;
 }
