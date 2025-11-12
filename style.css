@@ -1,4 +1,10 @@
 /* updated for black background */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #000; /* black background */
+  color: #fff;
+}
 body {
   background-color: #000; /* black background */
   color: #fff;            /* white text */
