@@ -138,12 +138,18 @@ header h1 {
   color: #ccc;
 }
 
-/* Move upload box closer to header */
 header {
-  margin-bottom: 0;
-  padding-bottom: 0.3em;
+  background-color: #004aad;
+  color: #fff;
+  text-align: center;
+  padding: 0.3em 0;  /* thinner banner */
+  margin: 0;         /* remove all outer spacing */
+}
+
+header h1 {
+  margin: 0.2em 0;   /* tighten title spacing */
 }
 
 #pdf-upload {
-  margin-top: 1px; /* just a tiny space under header */
+  margin-top: 0;     /* pulls box flush to header */
 }
