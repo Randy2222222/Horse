@@ -32,7 +32,7 @@ header h1 {
   border-radius: 6px;
   padding: 5px 0 5px 0;
   margin: 5px auto 20px auto;   /* tiny space under header */
-  width: 50%;
+  width: 40%;
   max-width: 450px;
 }
 
