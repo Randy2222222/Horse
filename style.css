@@ -1,133 +1,54 @@
-/* updated for black background */
+/* Base page settings */
 html, body {
   margin: 0;
   padding: 0;
-  background-color: #000; /* black background */
+  background-color: #000;
   color: #fff;
-}
-body {
-  background-color: #000; /* black background */
-  color: #fff;            /* white text */
   font-family: Arial, sans-serif;
   text-align: center;
-  margin: 0;
-  padding: 0;
 }
 
-/* Headings */
-h1, h2, h3 {
-  color: #fff;
-}
-
-/* Upload and button sections */
-input[type="file"], button {
-  background-color: #222;
-  color: #fff;
-  border: 1px solid #555;
-  padding: 8px 12px;
-  margin: 8px;
-  border-radius: 4px;
-}
-
-input[type="file"]:hover, button:hover {
-  background-color: #444;
-}
-
-/* Graph area */
-canvas {
-  background-color: #fff; /* keep graph area white */
-  border: 2px solid #666;
-  margin-top: 20px;
-}
-
-/* Container for sections if you use them */
-section {
-  background-color: #111;
-  border: 1px solid #333;
-  padding: 20px;
-  margin: 20px;
-  border-radius: 8px;
-}
-
-/* File input styling */
-input[type="file"] {
-  background-color: #222;
-  color: #fff;
-  border: 1px solid #555;
-  padding: 8px;
-  border-radius: 5px;
-  margin-top: 20px;
-}
-
-p, h1, h2, h3 {
-  color: #fff;
-}
-
-/* Graph box */
-canvas {
-  background-color: #fff;  /* white box for graph */
-  border: 1px solid #444;
-}
-
-/* Header bar (thinner and sleeker) */
+/* Header (blue banner) */
 header {
   background-color: #004aad;
   color: #fff;
   text-align: center;
-  padding: 0.5em 0;      /* thinner than 1em */
-  font-size: 1.4em;      /* slightly larger text */
-  font-weight: bold;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;   /* small gap below header */
+  padding: 0.2em 0;      /* thin height */
+  margin: 0;
+  line-height: 1;        /* tighten blue bar */
 }
 
 header h1 {
-  margin: 0;             /* remove extra top/bottom space */
-  padding: 0;            /* tighten text spacing */
-  line-height: 1.2em;    /* keeps it vertically compact */
+  margin: 0;
+  padding: 0;
+  font-size: 1.4em;
+  line-height: 1.2em;    /* vertically centered text */
 }
 
-/* Output section */
-#program-output {
-  padding: 20px;
-}
-
-/* Dark race info blocks */
-.race-block {
-  background: #111;  /* dark gray for readability */
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 10px;
-  margin-bottom: 20px;
-}
-
-/* Graph container sizing */
-.graph-container {
-  width: 100%;
-  height: 100px;
-}
-
-
-/* Compact and narrow PDF upload section - pulled tight under header */
+/* Upload box (right below header) */
 #pdf-upload {
   background-color: #111;
   border: 1px solid #333;
   border-radius: 6px;
-  padding: 8px 0 12px 0;
-  margin: 0 auto 20px auto;   /* 0 top margin, centered */
+  padding: 10px 0 12px 0;
+  margin: 2px auto 20px auto;   /* tiny space under header */
   width: 60%;
   max-width: 450px;
 }
 
-/* Title spacing */
+/* Upload section text and file input */
 #pdf-upload h2 {
-  margin-top: 6px;
+  margin-top: 4px;
   margin-bottom: 6px;
   font-size: 1.2em;
 }
 
-/* File input and status text spacing */
 #pdf-upload input[type="file"] {
+  background-color: #222;
+  color: #fff;
+  border: 1px solid #555;
+  border-radius: 5px;
+  padding: 6px;
   margin-top: 4px;
   margin-bottom: 4px;
 }
@@ -138,34 +59,7 @@ header h1 {
   color: #ccc;
 }
 
-header {
-  background-color: #004aad;
-  color: #fff;
-  text-align: center;
-  padding: 0.3em 0;  /* thinner banner */
-  margin: 0;         /* remove all outer spacing */
-}
-
-header h1 {
-  margin: 0.2em 0;   /* tighten title spacing */
-}
-
-#pdf-upload {
-  margin-top: 0;     /* pulls box flush to header */
-}
-
-/* Force upload box flush under header */
-header {
-  margin: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-#pdf-upload {
-  margin-top: 0 !important;
-  padding-top: 2px !important;
-}
-
-/* Debug spacing between header and upload */
-* {
-  outline: 1px solid red; /* just temporary */
+/* Output area */
+#program-output {
+  padding: 20px;
 }
