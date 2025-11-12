@@ -108,20 +108,20 @@ header h1 {
 }
 
 
-/* Compact and narrow PDF upload section */
+/* Compact and narrow PDF upload section - pulled tight under header */
 #pdf-upload {
   background-color: #111;
   border: 1px solid #333;
   border-radius: 6px;
   padding: 8px 0 12px 0;
-  margin: 10px auto 20px auto;  /* tight to header */
-  width: 60%;                   /* narrower box */
-  max-width: 450px;             /* limits on larger screens */
+  margin: 0 auto 20px auto;   /* 0 top margin, centered */
+  width: 60%;
+  max-width: 450px;
 }
 
 /* Title spacing */
 #pdf-upload h2 {
-  margin-top: 4px;
+  margin-top: 6px;
   margin-bottom: 6px;
   font-size: 1.2em;
 }
