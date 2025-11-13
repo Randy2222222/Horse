@@ -39,7 +39,7 @@ header h1 {
 /* Run Analysis button spacing */
 #runAnalysis {
   display: block;
-  margin: 4px auto 0 auto;  /* centers button + small gap above */
+  margin: 2px auto 0 auto;  /* centers button + small gap above */
 }
 
 /* Responsive adjustment for small screens */
@@ -69,6 +69,7 @@ header h1 {
 
 #pdfStatus {
   margin-top: 6px;
+  margin-bottom: 0;
   font-size: 0.9em;
   color: #ccc;
 }
