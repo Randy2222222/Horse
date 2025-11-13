@@ -74,7 +74,7 @@ function analyzeRace() {
   raceHorses.forEach((h, i) => {
     output += `${i + 1}. ${h.name}\n`;
     output += `   Score: ${h.totalScore}\n`;
-    output += `   Probability: ${h.probability}\n\
+    output += `   Probability: ${h.probability}\n`;
 }
 
 // Run once on page load
