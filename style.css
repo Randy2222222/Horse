@@ -31,7 +31,7 @@ header h1 {
   border: 1px solid #333;
   border-radius: 6px;
   padding: 2px 0 8px 0;
-  margin: 5px auto 20px auto;   /* tiny space under header */
+  margin: 5px auto 8px auto;   /* tiny space under header */
   width: 40%;
   max-width: 350px;
 }
@@ -40,6 +40,10 @@ header h1 {
 #runAnalysis {
   display: block;
   margin: 2px auto 0 auto;  /* centers button + small gap above */
+}
+
+#results {
+  margin-top: 6px;            /* small, even space above results */
 }
 
 /* Responsive adjustment for small screens */
