@@ -35,3 +35,6 @@ async function loadJockeyStats() {
     return [];
   }
 }
+
+console.log("Jockey stats loaded!");
+document.body.insertAdjacentHTML('beforeend', '<p style="color:#0f0; font-size:14px;">Jockey stats loaded successfully!</p>');
