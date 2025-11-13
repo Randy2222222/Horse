@@ -30,15 +30,16 @@ header h1 {
   background-color: #111;
   border: 1px solid #333;
   border-radius: 6px;
-  padding: 2px 0 0px 0;
+  padding: 2px 0 8px 0;
   margin: 5px auto 20px auto;   /* tiny space under header */
   width: 40%;
   max-width: 350px;
 }
 
+/* Run Analysis button spacing */
 #runAnalysis {
-  margin-top: -26px;
-  margin-bottom: 6px;
+  display: block;
+  margin: 4px auto 0 auto;  /* centers button + small gap above */
 }
 
 /* Responsive adjustment for small screens */
