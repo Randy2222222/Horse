@@ -43,40 +43,6 @@ function weightedScore(horse, weights) {
   return Number(total.toFixed(1));
 }
 
-// === TEMP TEST DATA ===
-const raceHorses = [
-  {
-    name: "Bold Crusader",
-    pastTimes: [95.3, 96.2, 94.8],
-    workoutScore: 82,
-    jockeyScore: 85,
-    trainerScore: 80,
-    trackScore: 88,
-    styleScore: 90,
-    troubleScore: 70
-  },
-  {
-    name: "River Master",
-    pastTimes: [96.8, 97.2, 95.9],
-    workoutScore: 79,
-    jockeyScore: 90,
-    trainerScore: 84,
-    trackScore: 85,
-    styleScore: 88,
-    troubleScore: 80
-  },
-  {
-    name: "Iron Wind",
-    pastTimes: [97.5, 96.7, 97.2],
-    workoutScore: 84,
-    jockeyScore: 77,
-    trainerScore: 83,
-    trackScore: 86,
-    styleScore: 82,
-    troubleScore: 75
-  }
-];
-
 // === MAIN ANALYZER FUNCTION ===
 function analyzeRace() {
   // 1. Compute average times
@@ -108,10 +74,7 @@ function analyzeRace() {
   raceHorses.forEach((h, i) => {
     output += `${i + 1}. ${h.name}\n`;
     output += `   Score: ${h.totalScore}\n`;
-    output += `   Probability: ${h.probability}\n\n`;
-  });
-
-  document.getElementById("output").textContent = output;
+    output += `   Probability: ${h.probability}\n\
 }
 
 // Run once on page load
