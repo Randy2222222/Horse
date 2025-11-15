@@ -74,6 +74,47 @@ function weightedScore(horse, weights) {
   return Number(total.toFixed(1));
 }
 
+// =======================================
+// TEMP TEST DATA — REMOVE AFTER PDF INPUT
+// =======================================
+const raceHorses = [
+  {
+    name: "Horse A",
+    raceInfo: "Test Race — 6f",
+    pastTimes: [71.2, 70.8, 72.1],  // seconds
+    calls: { first: "2nd", second: "1st", stretch: "1st", finish: "1st" },
+    workoutScore: 85,
+    jockeyScore: 90,
+    trainerScore: 88,
+    trackScore: 80,
+    styleScore: 75,
+    troubleScore: 95
+  },
+  {
+    name: "Horse B",
+    raceInfo: "Test Race — 6f",
+    pastTimes: [73.1, 72.8, 74.0],
+    calls: { first: "5th", second: "3rd", stretch: "2nd", finish: "2nd" },
+    workoutScore: 70,
+    jockeyScore: 82,
+    trainerScore: 90,
+    trackScore: 78,
+    styleScore: 72,
+    troubleScore: 88
+  },
+  {
+    name: "Horse C",
+    raceInfo: "Test Race — 6f",
+    pastTimes: [75.0, 74.3, 74.9],
+    calls: { first: "7th", second: "6th", stretch: "5th", finish: "4th" },
+    workoutScore: 65,
+    jockeyScore: 70,
+    trainerScore: 75,
+    trackScore: 72,
+    styleScore: 60,
+    troubleScore: 80
+  }
+];
 // === MAIN ANALYZER FUNCTION ===
 function analyzeRace() {
   // 1. Compute each horse's average time
