@@ -101,3 +101,31 @@ header h1 {
 .compact-calls td {
   padding: 0 3px;   /* tight spacing */
 }
+
+/* Compact Calls Table */
+.compact-calls table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 4px 0;
+}
+
+.compact-calls th,
+.compact-calls td {
+  padding: 2px 4px;
+  text-align: center;
+  font-size: 11px;
+}
+
+.compact-calls th {
+  font-weight: bold;
+  border-bottom: 1px solid #666;
+}
+
+/* Box around each horse's PP section */
+.horse-pp-box {
+  border: 1px solid #444;
+  padding: 8px;
+  margin: 10px 0;
+  background: #1a1a1a;
+  border-radius: 6px;
+}
