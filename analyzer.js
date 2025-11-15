@@ -30,11 +30,10 @@ async function handlePDF(event) {
   }
 
   pdfText = fullText;
-
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
   document.getElementById("pdfStatus").innerText =
     "PDF Loaded Successfully (" + pdf.numPages + " pages)";
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
 }
 
 
