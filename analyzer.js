@@ -4,7 +4,7 @@
 // ===============================
 
 // === CONFIGURATION ===
-const LENGTH_TO_SEC = 1 / 6;
+const LENGTH_TO_SEC = 1 / 6; // placeholder until your LPS table is integrated
 const weights = {
   speed: 0.4,
   workouts: 0.15,
@@ -15,12 +15,11 @@ const weights = {
   trouble: 0.1
 };
 
+// === CORE UI PIECE (NOT USED YET, KEEPS CODE COMPLETE) ===
 function createHorsePPBox(horse) {
-  // Create container
   const box = document.createElement("div");
   box.className = "horse-pp-box";
 
-  // Build the PP box HTML
   box.innerHTML = `
     <h3 class="horse-name">${horse.name}</h3>
     <div class="race-info">${horse.raceInfo}</div>
@@ -45,7 +44,8 @@ function createHorsePPBox(horse) {
 
   return box;
 }
-// === CORE FUNCTIONS ===
+
+// === CORE CALC FUNCTIONS ===
 function lengthsToSeconds(lengths) {
   return lengths * LENGTH_TO_SEC;
 }
@@ -70,42 +70,93 @@ function weightedScore(horse, weights) {
     horse.trackScore * weights.track +
     horse.styleScore * weights.style +
     horse.troubleScore * weights.trouble;
+
   return Number(total.toFixed(1));
 }
 
 // === MAIN ANALYZER FUNCTION ===
 function analyzeRace() {
-  // 1. Compute average times
-  raceHorses.forEach(h => h.avgTime = averageSpeed(h.pastTimes));
+  // 1. Compute each horse's average time
+  raceHorses.forEach(h => {
+    h.avgTime = averageSpeed(h.pastTimes);
+  });
 
-  // 2. Find field average
+  // 2. Field average
   const fieldAvg = averageSpeed(raceHorses.map(h => h.avgTime));
 
-  // 3. Compute speed scores
+  // 3. Speed scores
   raceHorses.forEach(h => {
-    const advantage = normalizeSpeed(h.avgTime, fieldAvg);
-    h.speedScore = 100 + advantage;
+    const adv = normalizeSpeed(h.avgTime, fieldAvg);
+    h.speedScore = 100 + adv;
   });
 
   // 4. Weighted totals
-  raceHorses.forEach(h => h.totalScore = weightedScore(h, weights));
+  raceHorses.forEach(h => {
+    h.totalScore = weightedScore(h, weights);
+  });
 
-  // 5. Sort by score
+  // 5. Sort by highest score
   raceHorses.sort((a, b) => b.totalScore - a.totalScore);
 
-  // 6. Probability share
+  // 6. Probability %
   const totalSum = raceHorses.reduce((sum, h) => sum + h.totalScore, 0);
   raceHorses.forEach(h => {
     h.probability = ((h.totalScore / totalSum) * 100).toFixed(1) + "%";
   });
 
-  // 7. Build output
+  // 7. Output
   let output = "=== Race Analysis Results ===\n\n";
   raceHorses.forEach((h, i) => {
     output += `${i + 1}. ${h.name}\n`;
     output += `   Score: ${h.totalScore}\n`;
-    output += `   Probability: ${h.probability}\n`;
+    output += `   Probability: ${h.probability}\n\n`;
+  });
+
+  console.log(output);
 }
+
+// =========================================================
+// === TEST BLOCK (Temporary until PDF reading is added) ===
+// =========================================================
+
+let raceHorses = [
+  {
+    name: "Fast Rocket",
+    pastTimes: [70.2, 70.5, 69.8], // seconds
+    workoutScore: 80,
+    jockeyScore: 85,
+    trainerScore: 82,
+    trackScore: 78,
+    styleScore: 70,
+    troubleScore: 90,
+    calls: { first: "3rd", second: "2nd", stretch: "1st", finish: "1st" },
+    raceInfo: "6f Allowance"
+  },
+  {
+    name: "Silver Thunder",
+    pastTimes: [71.4, 71.1, 71.7],
+    workoutScore: 88,
+    jockeyScore: 80,
+    trainerScore: 81,
+    trackScore: 79,
+    styleScore: 75,
+    troubleScore: 70,
+    calls: { first: "6th", second: "5th", stretch: "4th", finish: "3rd" },
+    raceInfo: "6f Allowance"
+  },
+  {
+    name: "Golden Dash",
+    pastTimes: [70.9, 70.7, 70.8],
+    workoutScore: 75,
+    jockeyScore: 78,
+    trainerScore: 83,
+    trackScore: 82,
+    styleScore: 72,
+    troubleScore: 65,
+    calls: { first: "4th", second: "3rd", stretch: "3rd", finish: "2nd" },
+    raceInfo: "6f Allowance"
+  }
+];
 
 // Run once on page load
 window.onload = analyzeRace;
