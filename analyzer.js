@@ -2,15 +2,14 @@
 // ===============================
 // PDF LOADING SYSTEM
 // ===============================
+// MUST COME FIRST — Safari requires this BEFORE any PDF.js call
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.work
 
 document.getElementById("pdfFile").addEventListener("change", handlePDF);
 document.getElementById("runAnalysis").addEventListener("click", analyzePDF);
 
 let pdfText = "";
-
-// REQUIRED worker file
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
 
 async function handlePDF(event) {
   const file = event.target.files[0];
