@@ -7,8 +7,7 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
 
-document.getElementById("pdfFile").addEventListener("change", handlePDF);
-document.getElementById("runAnalysis").addEventListener("click", analyzePDF);
+
 
 let pdfText = "";
 
@@ -173,3 +172,7 @@ function analyzeRace() {
 
   document.body.appendChild(box);
 }
+window.onload = () => {
+  document.getElementById("pdfFile").addEventListener("change", handlePDF);
+  document.getElementById("runAnalysis").addEventListener("click", analyzePDF);
+};
