@@ -14,6 +14,7 @@ let pdfText = "";
 
 // --- SINGLE VALID PDF HANDLER ---
 async function handlePDF(event) {
+  console.log("HANDLE PDF FIRED");
   const file = event.target.files[0];
   if (!file) return;
 
