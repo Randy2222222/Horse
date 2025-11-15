@@ -11,23 +11,25 @@
     <h1>Horse Racing Analyzer</h1>
   </header>
 
+  <!-- PDF Upload Section -->
   <section id="pdf-upload">
     <h2>Upload Brisnet PDF</h2>
     <input type="file" id="pdfFile" accept=".pdf">
     <p id="pdfStatus">No file uploaded yet.</p>
     <button id="runAnalysis">Run Analysis</button>
   </section>
-  
-  <main id="program-output">
-    <!-- New placeholder for all horse PP sections -->
+
+  <!-- Past Performance Section -->
+  <section id="pp-container">
+    <h2>Past Performances</h2>
     <div id="pp-sections"></div>
-    <!-- The analyzer will inject race data here -->
-  <!-- Analyzer Results Section -->
-  <div id="results">
+  </section>
+
+  <!-- Analysis Results Section -->
+  <section id="results">
     <h2>Race Analysis Results</h2>
     <pre id="output"></pre>
-  </div>
-  </main>
+  </section>
 
   <script src="js/horseGraph.js"></script>
   <script src="js/jockeyLoader.js"></script>
