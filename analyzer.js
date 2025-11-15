@@ -149,7 +149,17 @@ function analyzeRace() {
     output += `   Probability: ${h.probability}\n\n`;
   });
 
-  console.log(output);
+  let box = document.createElement("pre");
+box.style.whiteSpace = "pre-wrap";
+box.style.background = "#111";
+box.style.color = "#0f0";
+box.style.padding = "15px";
+box.style.border = "1px solid #333";
+box.style.marginTop = "10px";
+box.innerText = output;
+
+document.body.appendChild(box);
+
 }
 
 // Run once on page load
