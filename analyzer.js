@@ -2,7 +2,10 @@
 // ===============================
 // PDF LOADING SYSTEM
 // ===============================
-
+function log(msg) {
+  const box = document.getElementById("jsConsole");
+  box.innerText += msg + "\n";
+}
 // MUST COME FIRST — Safari requires this BEFORE any PDF.js calls
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
@@ -13,13 +16,16 @@ let pdfText = "";
 
 // --- SINGLE VALID PDF HANDLER ---
 async function handlePDF(event) {
+    log("handlePDF triggered");
   console.log("HANDLE PDF FIRED");
   const file = event.target.files[0];
+    log("File object = " + file);
   if (!file) return;
 
   document.getElementById("pdfStatus").innerText = "Reading PDF...";
 
   const arrayBuffer = await file.arrayBuffer();
+    log("ArrayBuffer loaded");
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
   let fullText = "";
