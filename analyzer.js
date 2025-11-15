@@ -18,6 +18,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
 
 async function handlePDF(event) {
+  console.log("DEBUG pdfjsLib =", pdfjsLib);
   const file = event.target.files[0];
   if (!file) return;
 
