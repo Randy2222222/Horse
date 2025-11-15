@@ -1,8 +1,9 @@
-// ===============================
+
 // ===============================
 // PDF LOADING SYSTEM
 // ===============================
-// MUST COME FIRST — Safari requires this BEFORE any PDF.js 
+
+// MUST COME FIRST — Safari requires this BEFORE any PDF.js calls
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
 
@@ -11,6 +12,7 @@ document.getElementById("runAnalysis").addEventListener("click", analyzePDF);
 
 let pdfText = "";
 
+// --- SINGLE VALID PDF HANDLER ---
 async function handlePDF(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -30,33 +32,12 @@ async function handlePDF(event) {
   }
 
   pdfText = fullText;
-  document.getElementById("pdfStatus").innerText =
-    "PDF Loaded Successfully (" + pdf.numPages + " pages)";
-}
-async function handlePDF(event) {
-  const file = event.target.files[0];
-  if (!file) return;
 
-  document.getElementById("pdfStatus").innerText = "Reading PDF...";
-
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-  let fullText = "";
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const strings = content.items.map(item => item.str);
-    fullText += strings.join(" ") + "\n\n";
-  }
-
-  pdfText = fullText;
   document.getElementById("pdfStatus").innerText =
     "PDF Loaded Successfully (" + pdf.numPages + " pages)";
 }
 
-
+// --- ANALYZE PDF ---
 function analyzePDF() {
   if (!pdfText) {
     alert("Please upload a PDF first.");
@@ -66,10 +47,14 @@ function analyzePDF() {
   console.log("=== RAW PDF TEXT ===");
   console.log(pdfText);
 
-  // Later — we will parse horses here
+  // Parsing will go here later
 }
-// === CONFIGURATION ===
+
+// ===============================
+// CONFIGURATION
+// ===============================
 const LENGTH_TO_SEC = 1 / 6; // placeholder until LPS table is integrated
+
 const weights = {
   speed: 0.4,
   workouts: 0.15,
@@ -80,7 +65,9 @@ const weights = {
   trouble: 0.1
 };
 
-// === CORE UI (not used yet, but correct) ===
+// ===============================
+// CORE UI
+// ===============================
 function createHorsePPBox(horse) {
   const box = document.createElement("div");
   box.className = "horse-pp-box";
@@ -105,7 +92,9 @@ function createHorsePPBox(horse) {
   return box;
 }
 
-// === CORE CALC FUNCTIONS ===
+// ===============================
+// CORE CALC FUNCTIONS
+// ===============================
 function lengthsToSeconds(lengths) {
   return lengths * LENGTH_TO_SEC;
 }
@@ -134,80 +123,37 @@ function weightedScore(horse, weights) {
   );
 }
 
-// =========================================================
-// === SINGLE CLEAN TEST BLOCK (ONLY ONE!) ===
-// =========================================================
-let raceHorses = []; // empty till PDF loads
-/* temporary test horses
-  {
-    name: "Fast Rocket",
-    raceInfo: "6f Allowance",
-    pastTimes: [70.2, 70.5, 69.8],
-    calls: { first: "3rd", second: "2nd", stretch: "1st", finish: "1st" },
-    workoutScore: 80,
-    jockeyScore: 85,
-    trainerScore: 82,
-    trackScore: 78,
-    styleScore: 70,
-    troubleScore: 90
-  },
-  {
-    name: "Silver Thunder",
-    raceInfo: "6f Allowance",
-    pastTimes: [71.4, 71.1, 71.7],
-    calls: { first: "6th", second: "5th", stretch: "4th", finish: "3rd" },
-    workoutScore: 88,
-    jockeyScore: 80,
-    trainerScore: 81,
-    trackScore: 79,
-    styleScore: 75,
-    troubleScore: 70
-  },
-  {
-    name: "Golden Dash",
-    raceInfo: "6f Allowance",
-    pastTimes: [70.9, 70.7, 70.8],
-    calls: { first: "4th", second: "3rd", stretch: "3rd", finish: "2nd" },
-    workoutScore: 75,
-    jockeyScore: 78,
-    trainerScore: 83,
-    trackScore: 82,
-    styleScore: 72,
-    troubleScore: 65
-  }
-];*/
+// ===============================
+// EMPTY RACE HORSES LIST
+// ===============================
+let raceHorses = [];
 
-// === MAIN ANALYZER FUNCTION ===
+// ===============================
+// MAIN ANALYZER FUNCTION
+// ===============================
 function analyzeRace() {
-  // Compute averages
   raceHorses.forEach(h => {
     h.avgTime = averageSpeed(h.pastTimes);
   });
 
-  // Field average
   const fieldAvg = averageSpeed(raceHorses.map(h => h.avgTime));
 
-  // Speed scores
   raceHorses.forEach(h => {
     const adv = normalizeSpeed(h.avgTime, fieldAvg);
     h.speedScore = 100 + adv;
   });
 
-  // Weighted totals
   raceHorses.forEach(h => {
     h.totalScore = weightedScore(h, weights);
   });
 
-  // Sort by highest score
   raceHorses.sort((a, b) => b.totalScore - a.totalScore);
 
-  // Probabilities
   const totalSum = raceHorses.reduce((sum, h) => sum + h.totalScore, 0);
   raceHorses.forEach(h => {
     h.probability = ((h.totalScore / totalSum) * 100).toFixed(1) + "%";
   });
 
-  // Output
   let output = "=== Race Analysis Results ===\n\n";
   raceHorses.forEach((h, i) => {
     output += `${i + 1}. ${h.name}\n`;
@@ -216,14 +162,13 @@ function analyzeRace() {
   });
 
   let box = document.createElement("pre");
-box.style.whiteSpace = "pre-wrap";
-box.style.background = "#111";
-box.style.color = "#0f0";
-box.style.padding = "15px";
-box.style.border = "1px solid #333";
-box.style.marginTop = "10px";
-box.innerText = output;
+  box.style.whiteSpace = "pre-wrap";
+  box.style.background = "#111";
+  box.style.color = "#0f0";
+  box.style.padding = "15px";
+  box.style.border = "1px solid #333";
+  box.style.marginTop = "10px";
+  box.innerText = output;
 
-document.body.appendChild(box);
-
+  document.body.appendChild(box);
 }
