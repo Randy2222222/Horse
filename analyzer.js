@@ -153,4 +153,7 @@ function analyzeRace() {
 }
 
 // Run once on page load
-window.onload = analyzeRace;
+window.onload = () => {
+  console.log("Running test race...");
+  analyzeRace();
+};
