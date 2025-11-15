@@ -15,6 +15,36 @@ const weights = {
   trouble: 0.1
 };
 
+function createHorsePPBox(horse) {
+  // Create container
+  const box = document.createElement("div");
+  box.className = "horse-pp-box";
+
+  // Build the PP box HTML
+  box.innerHTML = `
+    <h3 class="horse-name">${horse.name}</h3>
+    <div class="race-info">${horse.raceInfo}</div>
+
+    <div class="compact-calls">
+      <table>
+        <tr>
+          <th>1st</th>
+          <th>2nd</th>
+          <th>Str</th>
+          <th>Fin</th>
+        </tr>
+        <tr>
+          <td class="call-1st">${horse.calls.first}</td>
+          <td class="call-2nd">${horse.calls.second}</td>
+          <td class="call-str">${horse.calls.stretch}</td>
+          <td class="call-fin">${horse.calls.finish}</td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  return box;
+}
 // === CORE FUNCTIONS ===
 function lengthsToSeconds(lengths) {
   return lengths * LENGTH_TO_SEC;
