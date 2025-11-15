@@ -82,3 +82,22 @@ header h1 {
 #program-output {
   padding: 20px;
 }
+
+/* Compact call-time table */
+.compact-calls {
+  font-size: 12px;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  line-height: 1.1;
+}
+
+.compact-calls table {
+  margin: 0 auto;
+  border-collapse: collapse;
+}
+
+.compact-calls th,
+.compact-calls td {
+  padding: 0 3px;   /* tight spacing */
+}
