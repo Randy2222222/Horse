@@ -5,7 +5,10 @@
 // ===============================
 // PDF LOADING SYSTEM
 // ===============================
-
+function logDebug(msg) {
+  const box = document.getElementById("debugConsole");
+  box.innerText += msg + "\n";
+}
 document.getElementById("pdfFile").addEventListener("change", handlePDF);
 document.getElementById("runAnalysis").addEventListener("click", analyzePDF);
 
