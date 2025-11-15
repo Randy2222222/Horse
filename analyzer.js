@@ -115,7 +115,8 @@ function weightedScore(horse, weights) {
 // =========================================================
 // === SINGLE CLEAN TEST BLOCK (ONLY ONE!) ===
 // =========================================================
-let raceHorses = [
+let raceHorses = []; // empty till PDF loads
+/* temporary test horses
   {
     name: "Fast Rocket",
     raceInfo: "6f Allowance",
@@ -152,7 +153,7 @@ let raceHorses = [
     styleScore: 72,
     troubleScore: 65
   }
-];
+];*/
 
 // === MAIN ANALYZER FUNCTION ===
 function analyzeRace() {
@@ -204,9 +205,3 @@ box.innerText = output;
 document.body.appendChild(box);
 
 }
-
-// Run once on page load
-window.onload = () => {
-  console.log("Running test race...");
-  analyzeRace();
-};
