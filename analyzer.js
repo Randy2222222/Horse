@@ -2,7 +2,50 @@
 // HORSE RACING ANALYZER ENGINE
 // Phase 1: Core Calculations
 // ===============================
+// ===============================
+// PDF LOADING SYSTEM
+// ===============================
 
+document.getElementById("pdfFile").addEventListener("change", handlePDF);
+document.getElementById("runAnalysis").addEventListener("click", analyzePDF);
+
+let pdfText = "";  // will store all pages of text
+
+async function handlePDF(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  document.getElementById("pdfStatus").innerText = "Reading PDF...";
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  let fullText = "";
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const strings = content.items.map(item => item.str);
+    fullText += strings.join(" ") + "\n\n";
+  }
+
+  pdfText = fullText;
+
+  document.getElementById("pdfStatus").innerText =
+    "PDF Loaded Successfully (" + pdf.numPages + " pages)";
+}
+
+function analyzePDF() {
+  if (!pdfText) {
+    alert("Please upload a PDF first.");
+    return;
+  }
+
+  console.log("=== RAW PDF TEXT ===");
+  console.log(pdfText);
+
+  // Later — we will parse horses here
+}
 // === CONFIGURATION ===
 const LENGTH_TO_SEC = 1 / 6; // placeholder until LPS table is integrated
 const weights = {
