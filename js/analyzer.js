@@ -2,10 +2,6 @@
 // ===============================
 // PDF LOADING SYSTEM
 // ===============================
-function log(msg) {
-  const box = document.getElementById("jsConsole");
-  box.innerText += msg + "\n";
-}
 // MUST COME FIRST — Safari requires this BEFORE any PDF.js calls
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
