@@ -1,36 +1,69 @@
-// ===============================
-// PDF LOADING SYSTEM
-// ===============================
+// js/analyzer.js (instrumented test version)
+// Paste this entire file over your current analyzer.js, test, then remove the small alerts afterwards.
 
-// REQUIRED for PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
+// Quick load check (remove later)
+try {
+  // small visual confirmation that the script executed
+  alert("analyzer.js: script loaded");
+} catch (e) {
+  // ignore if alerts are blocked
+  console.log("analyzer.js loaded (no alert)");
+}
 
+// Try to locate pdfjsLib in the most common global places
+const pdfjsLib =
+  window['pdfjs-dist/build/pdf'] || // some builds
+  window.pdfjsLib ||               // typical CDN build (pdf.min.js)
+  null;
+
+if (!pdfjsLib) {
+  // If pdfjsLib cannot be found, show a clear message
+  alert("ERROR: pdfjsLib not found. Make sure pdf.min.js is loaded in <head>.");
+  throw new Error("pdfjsLib not found");
+}
+
+// REQUIRED for PDF.js worker — set it safely
+if (pdfjsLib.GlobalWorkerOptions) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
+} else {
+  alert("WARNING: pdfjsLib.GlobalWorkerOptions not present (unexpected).");
+}
+
+// ======= PDF loader state =======
 let pdfText = "";
 
 // --- SINGLE VALID PDF HANDLER ---
 async function handlePDF(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+  try {
+    const file = event.target.files[0];
+    if (!file) return;
 
-  document.getElementById("pdfStatus").innerText = "Reading PDF...";
+    const statusEl = document.getElementById("pdfStatus");
+    if (statusEl) statusEl.innerText = "Reading PDF...";
 
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-  let fullText = "";
+    let fullText = "";
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const strings = content.items.map(item => item.str);
-    fullText += strings.join(" ") + "\n\n";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const strings = content.items.map(item => item.str);
+      fullText += strings.join(" ") + "\n\n";
+    }
+
+    pdfText = fullText;
+
+    if (statusEl) {
+      statusEl.innerText = "PDF Loaded Successfully (" + pdf.numPages + " pages)";
+    }
+  } catch (err) {
+    // Visible error so we can debug on iPad
+    alert("Error reading PDF: " + (err && err.message ? err.message : err));
+    console.error("handlePDF error", err);
   }
-
-  pdfText = fullText;
-
-  document.getElementById("pdfStatus").innerText =
-    "PDF Loaded Successfully (" + pdf.numPages + " pages)";
 }
 
 // --- ANALYZE PDF ---
@@ -40,11 +73,12 @@ function analyzePDF() {
     return;
   }
 
-  // Parsing code will go here
+  // Parsing code will go here (left intentionally empty for now)
+  alert("analyzePDF: PDF text present (length: " + pdfText.length + ")");
 }
 
 // ===============================
-// CONFIGURATION
+// Configuration + helpers (unchanged logic)
 // ===============================
 const LENGTH_TO_SEC = 1 / 6;
 
@@ -58,9 +92,6 @@ const weights = {
   trouble: 0.1
 };
 
-// ===============================
-// CORE UI
-// ===============================
 function createHorsePPBox(horse) {
   const box = document.createElement("div");
   box.className = "horse-pp-box";
@@ -85,15 +116,12 @@ function createHorsePPBox(horse) {
   return box;
 }
 
-// ===============================
-// CORE CALC FUNCTIONS
-// ===============================
 function lengthsToSeconds(lengths) {
   return lengths * LENGTH_TO_SEC;
 }
 
 function averageSpeed(timesArray) {
-  if (!timesArray.length) return 0;
+  if (!timesArray || !timesArray.length) return 0;
   return timesArray.reduce((sum, t) => sum + t, 0) / timesArray.length;
 }
 
@@ -116,17 +144,11 @@ function weightedScore(horse, weights) {
   );
 }
 
-// ===============================
-// EMPTY RACE HORSES LIST
-// ===============================
 let raceHorses = [];
 
-// ===============================
-// MAIN ANALYZER FUNCTION
-// ===============================
 function analyzeRace() {
   raceHorses.forEach(h => {
-    h.avgTime = averageSpeed(h.pastTimes);
+    h.avgTime = averageSpeed(h.pastTimes || []);
   });
 
   const fieldAvg = averageSpeed(raceHorses.map(h => h.avgTime));
@@ -167,9 +189,18 @@ function analyzeRace() {
 }
 
 // ===============================
-// EVENT LISTENERS
+// EVENT LISTENERS (attach last)
 // ===============================
 window.onload = () => {
-  document.getElementById("pdfFile").addEventListener("change", handlePDF);
-  document.getElementById("runAnalysis").addEventListener("click", analyzePDF);
+  // Visual confirmation that onload fired (remove later)
+  try { console.log("analyzer.js: window.onload fired"); } catch (e) {}
+
+  const fileEl = document.getElementById("pdfFile");
+  const runBtn = document.getElementById("runAnalysis");
+
+  if (fileEl) fileEl.addEventListener("change", handlePDF);
+  else alert("ERROR: #pdfFile element not found in DOM");
+
+  if (runBtn) runBtn.addEventListener("click", analyzePDF);
+  else alert("ERROR: #runAnalysis button not found in DOM");
 };
