@@ -1,62 +1,23 @@
-// analyzer.js — Full analyzer (Option B, restored)
-// - PDF loader uses GitHub raw URL
-// - Race-call table uses your exact labels: "1st","2nd","str","fin"
-// - LpS/SPL math per-race (Option B)
-// - Weighting system and scoring restored
-// - Loads jockey_stats.txt into a simple map (name -> score)
-// - Parser area has TODO markers to implement exact Brisnet PP token parsing
-//
-// NOTE: put your RACE_DISTANCE variable (like "4f" or "1m") at the top
-//       or add logic in the parser to derive it from the PDF text.
-//
-// Requirements:
-// - pdf.min.js must be loaded in <head>
-// - pdfjsLib.GlobalWorkerOptions.workerSrc set (done below)
-// - jockey_stats.txt in root (or update path)
-// - race_calls_table present (we include the table you gave earlier)
+// js/analyzer.js — Final full analyzer (Option B) with your SPL math + formatting rules
+// - Requires: pdf.min.js loaded in <head>
+// - Requires: js/calls.js -> provides CALL_TABLE (loaded BEFORE this file)
+// - Requires: jockey_stats.txt at repo root (or edit path in loadJockeyStats)
+// - Edits: paste into js/analyzer.js and test (parser refinement likely needed once on real PDF)
 
-console.log("analyzer.js: full analyzer loaded");
+// Quick ready message
+console.log("analyzer.js: FINAL analyzer loaded");
 
-// -----------------------------
-// CONFIGURATION
-// -----------------------------
+// ---------------- CONFIG ----------------
 const PDF_URL = "https://raw.githubusercontent.com/Randy2222222/Horse/main/bw_pdf_viewer.php.pdf";
 
-// If you want to hardcode the race distance here, set RACE_DISTANCE (string)
-// Otherwise, let the parser detect it from the PDF text.
-let RACE_DISTANCE = undefined; // e.g. "4f" or "6f" or "1m" — set manually or let parser set it
+// small length tokens mapping (you can adjust values)
+const LENGTH_TOKEN_MAP = {
+  "hd": 0.1, "hd.": 0.1, "head": 0.1,
+  "nk": 0.25, "nk.": 0.25, "neck": 0.25,
+  "shd": 0.2, "nose": 0.05
+};
 
-// Ensure worker is set for Safari
-if (window.pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.111/pdf.worker.min.js";
-}
-
-// Your race call table (keeps your exact labels). Fill / adjust entries as needed.
-const race_calls_table = [
-  { "1st": null,  "2nd": 1320, "str": 2640, "fin": 2970 },
-  { "1st": null,  "2nd": 1320, "str": 2640, "fin": 3300 },
-  { "1st": 1320,  "2nd": 2640, "str": 3300, "fin": 3630 },
-  { "1st": 1320,  "2nd": 2640, "str": 3960, "fin": 4290 },
-  { "1st": 1320,  "2nd": 2640, "str": 3960, "fin": 4620 },
-  { "1st": 1320,  "2nd": 2640, "str": 3300, "fin": 3960 },
-  { "1st": 1320,  "2nd": 2640, "str": 3960, "fin": 4950 },
-  { "1st": 1320,  "2nd": 2640, "str": 3960, "fin": 5280 },
-  { "1st": 1320,  "2nd": 2640, "str": 3960, "fin": 5490 },
-  { "1st": 1320,  "2nd": 2640, "str": 3960, "fin": 5610 },
-  { "1st": 2640,  "2nd": 3960, "str": 5280, "fin": 5940 },
-  { "1st": 2640,  "2nd": 3960, "str": 5280, "fin": 6270 },
-  { "1st": 2640,  "2nd": 3960, "str": 5280, "fin": 6600 },
-  { "1st": 2640,  "2nd": 3960, "str": 5280, "fin": 7260 },
-  { "1st": 2640,  "2nd": 3960, "str": 6600, "fin": 7920 },
-  { "1st": 2640,  "2nd": 5280, "str": 6600, "fin": 8580 },
-  { "1st": 2640,  "2nd": 6600, "str": 7920, "fin": 9240 },
-  { "1st": 2640,  "2nd": 7920, "str": 9240, "fin": 10560 }
-];
-
-// -----------------------------
-// WEIGHTS (your confirmed weights)
-// -----------------------------
+// weights (confirmed)
 const weights = {
   speed: 0.4,
   workouts: 0.15,
@@ -67,277 +28,163 @@ const weights = {
   trouble: 0.1
 };
 
-// -----------------------------
-// JOCKEY STATS LOADER
-// Expects jockey_stats.txt at repo root (same place as index.html)
-// Format: text lines you used earlier (we parse to map name -> score if possible)
-// -----------------------------
-let jockeyStatsMap = {}; // name -> numeric score
+// ensure pdf worker for Safari/iPad
+if (window.pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.111/pdf.worker.min.js";
+}
+
+// ---------------- globals ----------------
+let jockeyStatsMap = {};
+let extractedText = "";
+let RACE_DISTANCE = undefined; // set manually or auto-detect
+let CALL_INFO = null; // from CALL_TABLE
+
+// ---------------- UI helper ----------------
+function updateStatus(msg) {
+  const el = document.getElementById("pdfStatus");
+  if (el) el.textContent = msg;
+  console.log("STATUS:", msg);
+}
+
+// ---------------- time helpers ----------------
+// parse time string to seconds (accepts "1:12.34" or "72.34")
+function toSeconds(timeStr) {
+  if (timeStr == null) return 0;
+  const s = String(timeStr).trim();
+  if (s.includes(":")) {
+    const parts = s.split(":");
+    const mm = Number(parts[0]) || 0;
+    const ss = Number(parts[1]) || 0;
+    return mm * 60 + ss;
+  }
+  return Number(s);
+}
+
+// parse length tokens into numeric lengths (in horse lengths)
+function parseLengthToken(tok) {
+  if (tok == null) return null;
+  const raw = String(tok).trim().toLowerCase();
+  // "1 1/2"
+  if (/^\d+\s+\d+\/\d+$/.test(raw)) {
+    const [w, frac] = raw.split(/\s+/);
+    const [a, b] = frac.split("/");
+    return Number(w) + Number(a) / Number(b);
+  }
+  // fraction "3/4"
+  if (/^\d+\/\d+$/.test(raw)) {
+    const [a, b] = raw.split("/");
+    return Number(a) / Number(b);
+  }
+  // plain number
+  if (!isNaN(Number(raw))) return Number(raw);
+  // tokens like hd, nk
+  if (LENGTH_TOKEN_MAP[raw] !== undefined) return LENGTH_TOKEN_MAP[raw];
+  // fallback: strip non-numeric
+  const n = Number(raw.replace(/[^\d.]/g, ""));
+  return isNaN(n) ? null : n;
+}
+
+// compute LpS and SPL for a call: LpS = (distance_ft / leaderTimeSec) / 10 ; SPL = 1 / LpS
+function computeLpS_and_SPL(callDistanceFeet, leaderCallTimeSec) {
+  if (!callDistanceFeet || !leaderCallTimeSec) return { lps: 0, spl: 0 };
+  const lps = (callDistanceFeet / leaderCallTimeSec) / 10;
+  const spl = lps ? (1 / lps) : 0;
+  return { lps, spl };
+}
+
+// format seconds to racing display per your rule:
+// - if sec < 60 -> "ss.ff" (no leading 0:)
+// - if sec >= 60 -> "m:SS.ff" (seconds always two digits)
+function formatRaceTimeRaw(sec) {
+  if (sec == null || isNaN(sec)) return "-";
+  const rounded = Math.round(Number(sec) * 100) / 100; // round to 2 decimals
+  if (rounded < 60) {
+    return rounded.toFixed(2);
+  } else {
+    const minutes = Math.floor(rounded / 60);
+    const secs = (rounded % 60).toFixed(2).padStart(5, "0");
+    return `${minutes}:${secs}`;
+  }
+}
+
+// ---------------- CALL_TABLE helper ----------------
+function findCallRowForDistance(distanceLabel) {
+  if (typeof CALL_TABLE === "undefined") {
+    console.error("CALL_TABLE not found. Ensure js/calls.js is loaded before analyzer.js");
+    return null;
+  }
+  if (!distanceLabel) return CALL_TABLE[0];
+  const norm = String(distanceLabel).toLowerCase().replace(/\s+/g, "");
+  // match flexible: "6", "6f", "1m", "1m1/16" etc.
+  for (const row of CALL_TABLE) {
+    const rdist = String(row.dist).toLowerCase().replace(/\s+/g, "");
+    if (rdist === norm || rdist === norm.replace("f","")) return row;
+  }
+  // numeric closests
+  const dnum = parseFloat(norm);
+  if (!isNaN(dnum)) {
+    let best = null; let bestDiff = Infinity;
+    for (const row of CALL_TABLE) {
+      const r = Number(row.dist);
+      if (!isNaN(r)) {
+        const diff = Math.abs(r - dnum);
+        if (diff < bestDiff) { bestDiff = diff; best = row; }
+      }
+    }
+    if (best) return best;
+  }
+  return CALL_TABLE[0];
+}
+
+// ---------------- jockey stats loader ----------------
 async function loadJockeyStats() {
+  jockeyStatsMap = {};
   try {
     const res = await fetch("jockey_stats.txt");
     if (!res.ok) {
-      console.warn("jockey_stats.txt not found or fetch failed:", res.status);
+      console.warn("jockey_stats.txt not found; continuing without jockey map.");
       return;
     }
     const text = await res.text();
-    // crude parse: each line maybe "JOCKEY_NAME,score" or "Jockey Name: score"
     const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    lines.forEach(line => {
-      // try CSV style
-      const csv = line.split(",").map(p => p.trim());
+    for (const line of lines) {
+      const csv = line.split(",").map(s => s.trim());
       if (csv.length >= 2 && !isNaN(Number(csv[1]))) {
-        const name = csv[0];
-        jockeyStatsMap[name] = Number(csv[1]);
-        return;
+        jockeyStatsMap[csv[0]] = Number(csv[1]); continue;
       }
-      // try "Name: value"
       const m = line.match(/^(.+?)[:\-]\s*([0-9.]+)/);
-      if (m) {
-        jockeyStatsMap[m[1].trim()] = Number(m[2]);
-        return;
-      }
-      // fallback: try last token numeric
-      const tokens = line.split(/\s+/);
-      const last = tokens[tokens.length - 1];
+      if (m) { jockeyStatsMap[m[1].trim()] = Number(m[2]); continue; }
+      // fallback: last token numeric
+      const toks = line.split(/\s+/);
+      const last = toks[toks.length - 1];
       if (!isNaN(Number(last))) {
-        const name = tokens.slice(0, -1).join(" ");
+        const name = toks.slice(0, -1).join(" ");
         jockeyStatsMap[name] = Number(last);
       }
-    });
+    }
     console.log("Loaded jockey stats:", Object.keys(jockeyStatsMap).length);
   } catch (err) {
     console.error("Error loading jockey stats:", err);
   }
 }
 
-// -----------------------------
-// UTILITY / MATH FUNCTIONS (Option B calculations)
-// -----------------------------
-function average(arr) {
-  if (!arr || arr.length === 0) return 0;
-  return arr.reduce((s, v) => s + v, 0) / arr.length;
-}
-
-// compute LpS from total feet and winner's total time in seconds:
-// LpS = (distance_ft / time_sec) / 10
-function computeLpS(distance_ft, time_sec) {
-  if (!distance_ft || !time_sec) return 0;
-  return (distance_ft / time_sec) / 10;
-}
-
-// seconds per length is 1 / LpS
-function LpS_to_SPL(lps) {
-  if (!lps) return 0;
-  return 1 / lps;
-}
-
-// convert lengths to seconds with given spl
-function lengthsToSeconds(lengths, spl) {
-  return lengths * spl;
-}
-
-// get call feet for a given distance label (if RACE_DISTANCE used later)
-// Since you asked to add distance manually, the code expects RACE_DISTANCE or parser to set it.
-// For now, try to match RACE_DISTANCE to a table index via some logic (simple fallback)
-function getCallFeetForDistance(distanceLabel) {
-  // If distanceLabel is undefined, return first row as fallback
-  if (!distanceLabel) return race_calls_table[0];
-  // Basic matching: if distanceLabel contains a number, try to use that position:
-  // This is a placeholder — you can map labels to table indices or make a keyed table
-  // For now, return first entry — you'll replace this by mapping your labels to table rows
-  return race_calls_table[0];
-}
-
-// -----------------------------
-// DATA MODEL HELPERS
-// -----------------------------
-function createEmptyHorse() {
-  return {
-    name: "",
-    post: null,
-    jockey: "",
-    trainer: "",
-    pastRuns: [], // { distanceLabel, distance_ft, finalTimeS, leaderTimes: { first, second, str, fin }, horseLengthsAtCalls: { first, second, str, finish } }
-    workoutScore: 50,
-    jockeyScore: 50,
-    trainerScore: 50,
-    trackScore: 50,
-    styleScore: 50,
-    troubleScore: 50,
-    avgTime: 0,
-    speedScore: 0,
-    totalScore: 0,
-    probability: "0.0%"
-  };
-}
-
-// -----------------------------
-// PARSING: PDF TEXT -> raceHorses
-// IMPORTANT: This section is the place we will plug your exact Brisnet rules.
-// I provide a robust scaffold — it extracts candidate horse blocks by naive heuristics,
-// finds final times using regex, and builds minimal pastRuns. Replace with exact token rules.
-// -----------------------------
-function parsePdfTextToRaceHorses(pdfText) {
-  // Defensive
-  if (!pdfText || !pdfText.trim()) {
-    return [];
-  }
-
-  // Attempt to find all occurrences of time strings mm:ss.xx or m:ss.x or ss.x
-  // Brisnet final times often look like "1:12.34" or "92.4" — we'll match both
-  const timeRegex = /(\d+:\d{2}\.\d{1,2})|(\d{1,3}\.\d{1,2})/g;
-
-  // Split into lines and try to find horse lines that contain a name and a final time
-  const lines = pdfText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-
-  // Heuristic: horse lines usually contain a name (words) + a final time near the end
-  const candidates = [];
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    // Check if line contains a time
-    const m = line.match(timeRegex);
-    if (m) {
-      // Create a candidate block: look back a few lines to find the horse name
-      const nameLine = (i >= 1 ? lines[i - 1] : line);
-      candidates.push({ nameLine, timeToken: m[m.length - 1], raw: line });
-    }
-  }
-
-  // Build horse objects from candidates (best-effort)
-  const horses = [];
-  for (let i = 0; i < candidates.length; i++) {
-    const cand = candidates[i];
-    const h = createEmptyHorse();
-    // crude name extraction: take first few words of nameLine (capitals or mixed)
-    const nm = cand.nameLine.split(/\s{2,}|\s-\s|,|  /)[0].trim();
-    h.name = nm || ("Horse " + (i + 1));
-    // parse the time token to seconds
-    let tkn = cand.timeToken;
-    let secs = 0;
-    if (tkn.includes(":")) {
-      // mm:ss.xx
-      const parts = tkn.split(":");
-      const mm = Number(parts[0]);
-      const ss = Number(parts[1]);
-      secs = mm * 60 + ss;
-    } else {
-      secs = Number(tkn);
-    }
-    // minimal pastRun
-    h.pastRuns.push({
-      distanceLabel: RACE_DISTANCE || "unknown",
-      distance_ft: null,
-      finalTimeS: secs,
-      leaderTimes: { first: null, second: null, str: null, fin: secs },
-      horseLengthsAtCalls: { first: null, second: null, str: null, finish: 0 }
-    });
-    horses.push(h);
-  }
-
-  // If parser found zero horses, return empty and we show sample
-  return horses;
-}
-
-// -----------------------------
-// CORE ANALYZER: compute avgTime, speedScore, weighted total, probabilities
-// -----------------------------
-function normalizeSpeed(horseTime, fieldAvg) {
-  if (!fieldAvg || !horseTime) return 100;
-  const adv = ((fieldAvg - horseTime) / fieldAvg) * 100;
-  return 100 + adv;
-}
-
-function computeWeightedScore(h, weightConfig) {
-  return Number(
-    (
-      (h.speedScore || 0) * weightConfig.speed +
-      (h.workoutScore || 0) * weightConfig.workouts +
-      (h.jockeyScore || 0) * weightConfig.jockey +
-      (h.trainerScore || 0) * weightConfig.trainer +
-      (h.trackScore || 0) * weightConfig.track +
-      (h.styleScore || 0) * weightConfig.style +
-      (h.troubleScore || 0) * weightConfig.trouble
-    ).toFixed(1)
-  );
-}
-
-function analyzeRaceHorses(horses) {
-  // compute avgTime per horse from their pastRuns finalTimeS
-  horses.forEach(h => {
-    const times = (h.pastRuns || []).map(r => r.finalTimeS).filter(Boolean);
-    h.avgTime = average(times);
-  });
-
-  const fieldAvg = average(horses.map(h => h.avgTime));
-
-  horses.forEach(h => {
-    h.speedScore = normalizeSpeed(h.avgTime || 0, fieldAvg || 0);
-    // if jockey score available from map, attach it
-    if (h.jockey && jockeyStatsMap[h.jockey]) {
-      h.jockeyScore = jockeyStatsMap[h.jockey];
-    } else {
-      h.jockeyScore = h.jockeyScore || 50;
-    }
-    h.workoutScore = h.workoutScore || 50;
-    h.trainerScore = h.trainerScore || 50;
-    h.trackScore = h.trackScore || 50;
-    h.styleScore = h.styleScore || 50;
-    h.troubleScore = h.troubleScore || 50;
-
-    h.totalScore = computeWeightedScore(h, weights);
-  });
-
-  horses.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0));
-  const total = horses.reduce((s, h) => s + (h.totalScore || 0), 0) || 1;
-  horses.forEach(h => {
-    h.probability = ((h.totalScore / total) * 100).toFixed(1) + "%";
-  });
-  return horses;
-}
-
-// -----------------------------
-// UI OUTPUT
-// -----------------------------
-function renderAnalysisOutput(horses) {
-  const out = document.getElementById("output");
-  if (!out) return;
-  let s = "=== Race Analysis Results ===\n\n";
-  horses.forEach((h, i) => {
-    s += `${i + 1}. ${h.name}\n`;
-    s += `   AvgTime: ${h.avgTime || "n/a"}\n`;
-    s += `   Score: ${h.totalScore}\n`;
-    s += `   Probability: ${h.probability}\n\n`;
-  });
-  out.textContent = s;
-}
-
-// -----------------------------
-// PDF LOADING & ENTRY POINT
-// -----------------------------
-let loadedPdfDoc = null;
-let extractedText = "";
-
-// load jockey stats first
-loadJockeyStats();
-
-// load PDF and extract text
-async function loadPdfAndExtract() {
+// ---------------- PDF load + text extraction ----------------
+async function loadPdfAndExtractText() {
   updateStatus("Loading PDF...");
   try {
     const loadingTask = pdfjsLib.getDocument({ url: PDF_URL });
     const pdf = await loadingTask.promise;
-    loadedPdfDoc = pdf;
     updateStatus(`PDF loaded (${pdf.numPages} pages). Extracting text...`);
-
-    let fullText = "";
+    let full = "";
     for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      fullText += content.items.map(it => it.str || "").join(" ") + "\n\n";
+      const p = await pdf.getPage(i);
+      const cc = await p.getTextContent();
+      const pageText = cc.items.map(it => it.str || "").join(" ");
+      full += pageText + "\n\n";
     }
-    extractedText = fullText;
-    window._pdfText = fullText;
+    extractedText = full;
+    window._pdfText = full;
     updateStatus("PDF text extracted.");
     return true;
   } catch (err) {
@@ -347,56 +194,255 @@ async function loadPdfAndExtract() {
   }
 }
 
-// -----------------------------
-// Button: Run Analysis
-// -----------------------------
-document.getElementById("runAnalysis").addEventListener("click", async () => {
-  updateStatus("Starting analysis: loading PDF...");
-  const ok = await loadPdfAndExtract();
+// ---------------- parse leader times (best-effort) ----------------
+function extractLeaderTimes(pdfText) {
+  const out = { first: null, second: null, str: null, fin: null };
+  if (!pdfText) return out;
+  const flat = pdfText.replace(/\s+/g, " ");
+  // try labelled patterns
+  const m1 = flat.match(/(?:1st(?:\s*call)?|first)\s*[:\-]?\s*(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/i);
+  if (m1) out.first = toSeconds(m1[1]);
+  const m2 = flat.match(/(?:2nd(?:\s*call)?|second)\s*[:\-]?\s*(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/i);
+  if (m2) out.second = toSeconds(m2[1]);
+  const m3 = flat.match(/(?:str(?:etch)?|stretch)\s*[:\-]?\s*(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/i);
+  if (m3) out.str = toSeconds(m3[1]);
+  const m4 = flat.match(/(?:fin(?:al)?|finish)\s*[:\-]?\s*(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/i);
+  if (m4) out.fin = toSeconds(m4[1]);
+  // fallback: if final missing, try last time token
+  const timeRegex = /(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/g;
+  const times = flat.match(timeRegex) || [];
+  if (!out.fin && times.length) out.fin = toSeconds(times[times.length - 1]);
+  if (!out.first && times.length >= 3) out.first = toSeconds(times[0]);
+  if (!out.second && times.length >= 3) out.second = toSeconds(times[1]);
+  if (!out.str && times.length >= 3) out.str = toSeconds(times[Math.max(2, times.length - 2)]);
+  return out;
+}
+
+// ---------------- parse horses and lengths (scaffold) ----------------
+function parseHorsesFromText(pdfText) {
+  const lines = pdfText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const horses = [];
+  const timeRx = /(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const timeMatch = line.match(timeRx);
+    if (!timeMatch) continue;
+    // probable name is previous line if it has letters and few digits
+    const prev = i > 0 ? lines[i - 1] : null;
+    let name = null;
+    if (prev && /[A-Za-z]/.test(prev) && !/\d/.test(prev)) name = prev;
+    if (!name) {
+      const m = line.match(/^([A-Z][A-Za-z'\-\. ]{2,40})/);
+      if (m) name = m[1].trim();
+    }
+    if (!name) continue;
+    const finalTime = toSeconds(timeMatch[0]);
+    const horse = {
+      name: name,
+      jockey: null,
+      trainer: null,
+      finalTimeS: finalTime,
+      callLengths: { first: null, second: null, str: null, fin: 0 }
+    };
+    // look forward a few lines for lengths tokens
+    for (let k = 0; k < 6 && (i + k) < lines.length; k++) {
+      const probe = lines[i + k];
+      // tokens that look like length tokens in a row
+      const tokens = probe.split(/\s+/);
+      const lenTokens = tokens.filter(t => {
+        return /^\d+(\.\d+)?$/.test(t) || /^\d+\/\d+$/.test(t) || /^[0-9]+\s+[0-9]\/[0-9]+$/.test(t)
+               || /^(hd|nk|shd|nose|head)$/i.test(t);
+      });
+      if (lenTokens.length >= 3) {
+        const l0 = parseLengthToken(lenTokens[0]);
+        const l1 = parseLengthToken(lenTokens[1]);
+        const l2 = parseLengthToken(lenTokens[2]);
+        if (l0 !== null) horse.callLengths.first = l0;
+        if (l1 !== null) horse.callLengths.second = l1;
+        if (l2 !== null) horse.callLengths.str = l2;
+        break;
+      }
+      // try dash pattern: "4-4-3-1"
+      const dash = probe.match(/(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)-?(\d+(?:\.\d+)?)?/);
+      if (dash) {
+        horse.callLengths.first = parseLengthToken(dash[1]);
+        horse.callLengths.second = parseLengthToken(dash[2]);
+        horse.callLengths.str = parseLengthToken(dash[3]);
+        break;
+      }
+    }
+    horses.push(horse);
+  }
+  return horses;
+}
+
+// ---------------- compute call times per horse ----------------
+function computeCallTimesForRace(horses, leaderTimes, callFeet) {
+  const calls = ["first", "second", "str", "fin"];
+  const callLabelMap = { first: "1st", second: "2nd", str: "str", fin: "fin" };
+  // compute metrics
+  const callMetrics = {};
+  for (const c of calls) {
+    const label = callLabelMap[c];
+    const ft = callFeet[label];
+    const leaderT = leaderTimes[c] || null;
+    if (ft && leaderT) {
+      const { lps, spl } = computeLpS_and_SPL(ft, leaderT);
+      callMetrics[c] = { ft, leaderT, lps, spl };
+    } else {
+      callMetrics[c] = { ft, leaderT: null, lps: 0, spl: 0 };
+    }
+  }
+  // assign per-horse times
+  for (const h of horses) {
+    h.calculatedCalls = { first: null, second: null, str: null, fin: null };
+    for (const c of calls) {
+      const metrics = callMetrics[c];
+      const lengthsBehind = (c === "fin") ? 0 : (h.callLengths[c] == null ? null : Number(h.callLengths[c]));
+      if (!metrics.leaderT && c === "fin") {
+        h.calculatedCalls.fin = h.finalTimeS;
+        continue;
+      }
+      if (!metrics.leaderT) {
+        h.calculatedCalls[c] = null;
+        continue;
+      }
+      if (lengthsBehind == null) {
+        h.calculatedCalls[c] = null;
+        continue;
+      }
+      const deltaSec = lengthsToSeconds(lengthsBehind, metrics.spl);
+      h.calculatedCalls[c] = metrics.leaderT + deltaSec;
+    }
+    if (!h.calculatedCalls.fin && h.finalTimeS) h.calculatedCalls.fin = h.finalTimeS;
+  }
+  return { horses, callMetrics };
+}
+function lengthsToSeconds(lengths, spl) {
+  if (!spl) return 0;
+  return Number(lengths) * spl;
+}
+
+// ---------------- scoring ----------------
+function avg(arr) {
+  if (!arr || !arr.length) return 0;
+  return arr.reduce((s,v)=>s+v,0)/arr.length;
+}
+function normalizeSpeed(hTime, fAvg) {
+  if (!fAvg || !hTime) return 100;
+  return 100 + ((fAvg - hTime) / fAvg) * 100;
+}
+function computeWeightedScoreForHorse(h) {
+  return Number((
+    (h.speedScore||0) * weights.speed +
+    (h.workoutScore||0) * weights.workouts +
+    (h.jockeyScore||0) * weights.jockey +
+    (h.trainerScore||0) * weights.trainer +
+    (h.trackScore||0) * weights.track +
+    (h.styleScore||0) * weights.style +
+    (h.troubleScore||0) * weights.trouble
+  ).toFixed(1));
+}
+function analyzeScores(horses) {
+  horses.forEach(h => {
+    h.avgTime = h.finalTimeS || 0;
+  });
+  const fieldAvg = avg(horses.map(h => h.avgTime || 0)) || 1;
+  horses.forEach(h => {
+    h.speedScore = normalizeSpeed(h.avgTime, fieldAvg);
+    h.jockeyScore = (h.jockey && jockeyStatsMap[h.jockey]) ? jockeyStatsMap[h.jockey] : (h.jockeyScore || 50);
+    h.workoutScore = h.workoutScore || 50;
+    h.trainerScore = h.trainerScore || 50;
+    h.trackScore = h.trackScore || 50;
+    h.styleScore = h.styleScore || 50;
+    h.troubleScore = h.troubleScore || 50;
+    h.totalScore = computeWeightedScoreForHorse(h);
+  });
+  horses.sort((a,b)=> (b.totalScore||0) - (a.totalScore||0));
+  const total = horses.reduce((s,h)=>s+(h.totalScore||0),0)||1;
+  horses.forEach(h=> { h.probability = ((h.totalScore/total)*100).toFixed(1) + "%"; });
+  return horses;
+}
+
+// ---------------- render ----------------
+function renderAnalysis(horses, callMetrics) {
+  const out = document.getElementById("output");
+  if (!out) return;
+  let s = "=== Race Analysis Results ===\n\n";
+  s += `Detected race distance: ${RACE_DISTANCE || "unknown"}\n\n`;
+  s += "Per-call leader metrics (lps / spl):\n";
+  for (const k in callMetrics) {
+    const m = callMetrics[k];
+    s += `${k}: leaderT=${m.leaderT ? formatRaceTimeRaw(m.leaderT) : "-"}, lps=${m.lps ? m.lps.toFixed(3) : "-"}, spl=${m.spl ? m.spl.toFixed(3) : "-"}\n`;
+  }
+  s += "\nHorses:\n";
+  horses.forEach((h,i)=>{
+    s += `${i+1}. ${h.name}\n`;
+    s += `     FinalTime: ${h.finalTimeS ? formatRaceTimeRaw(h.finalTimeS) : "-"}\n`;
+    s += `     Calculated Calls: 1st:${h.calculatedCalls.first ? formatRaceTimeRaw(h.calculatedCalls.first) : "-"}, 2nd:${h.calculatedCalls.second ? formatRaceTimeRaw(h.calculatedCalls.second) : "-"}, Str:${h.calculatedCalls.str ? formatRaceTimeRaw(h.calculatedCalls.str) : "-"}, Fin:${h.calculatedCalls.fin ? formatRaceTimeRaw(h.calculatedCalls.fin) : "-"}\n`;
+    s += `     Score: ${h.totalScore}  Probability: ${h.probability}\n`;
+    if (h.jockey) {
+      const jscore = jockeyStatsMap[h.jockey] || "n/a";
+      s += `     Jockey: ${h.jockey} (score: ${jscore})\n`;
+    }
+    s += "\n";
+  });
+  out.textContent = s;
+}
+
+// ---------------- main flow ----------------
+async function runFullAnalysis() {
+  updateStatus("Loading jockey stats...");
+  await loadJockeyStats();
+
+  updateStatus("Loading and extracting PDF...");
+  const ok = await loadPdfAndExtractText();
   if (!ok) return;
 
-  updateStatus("Parsing PDF text into horses...");
-  const pdfText = extractedText || "";
-  // If you know RACE_DISTANCE ahead of time, set RACE_DISTANCE variable above.
-  // Else attempt to detect in pdfText (simple detection below)
-  if (!RACE_DISTANCE) {
-    // simple attempt to find patterns like "6f" or "1m" near the top of the file
-    const m = pdfText.match(/\b(\d+(\.\d+)?f|1m|1\s?m|1m1\/16|1 1\/16|1 1\/8|1m1\/8)\b/i);
-    if (m) RACE_DISTANCE = m[0].replace(/\s+/g, "");
+  updateStatus("Detecting race distance...");
+  let detected = null;
+  const dmatch = extractedText.match(/\b(\d+(?:\.\d+)?\s?f|1m(?:\s?1\/16|1\/8)?|1\s?1\/16|1\s?1\/8)\b/i);
+  if (dmatch) {
+    detected = dmatch[0].replace(/\s+/g,"");
+    RACE_DISTANCE = detected;
   }
+  CALL_INFO = findCallRowForDistance(RACE_DISTANCE);
 
-  // parse into horses (replace this function with Brisnet-specific tokens for exact mapping)
-  let horses = parsePdfTextToRaceHorses(pdfText);
+  updateStatus("Extracting leader call times...");
+  const leaderTimes = extractLeaderTimes(extractedText);
+  console.log("Leader times:", leaderTimes);
+
+  updateStatus("Parsing horses and call lengths...");
+  let horses = parseHorsesFromText(extractedText);
+  console.log("Parsed horses (count):", horses.length, horses);
 
   if (!horses || horses.length === 0) {
-    // fallback sample so UI shows something — you can remove when parser is completed
-    const sample = createEmptyHorse();
-    sample.name = "Sample Horse A";
-    sample.jockey = "Sample J";
-    sample.pastRuns = [{ distanceLabel: RACE_DISTANCE || "unknown", finalTimeS: 92.4 }];
-    const sample2 = createEmptyHorse();
-    sample2.name = "Sample Horse B";
-    sample2.jockey = "Sample J2";
-    sample2.pastRuns = [{ distanceLabel: RACE_DISTANCE || "unknown", finalTimeS: 93.6 }];
-    horses = [sample, sample2];
+    const s1 = { name: "Sample A", jockey: "Sample J", finalTimeS: 92.4, callLengths: { first:0, second:0, str:0, fin:0 } };
+    const s2 = { name: "Sample B", jockey: "Sample J2", finalTimeS: 94.1, callLengths: { first:2, second:2, str:1, fin:0 } };
+    horses = [s1, s2];
   }
 
-  // compute derived data using your LpS/SPL formulas once you have leader times and lengths
-  // NOTE: when real parsed data includes leaderTimes (leaderTimes.first etc) and horseLengthsAtCalls,
-  // you should compute per-run SPL with computeLpS(distance_ft, leaderFinalTime) then convert lengths to secs.
+  updateStatus("Computing call times using SPL math...");
+  const callFeet = { "1st": CALL_INFO["1st"], "2nd": CALL_INFO["2nd"], "str": CALL_INFO["str"], "fin": CALL_INFO["fin"] };
+  const { horses: computedHorses, callMetrics } = computeCallTimesForRace(horses, leaderTimes, callFeet);
 
-  horses = analyzeRaceHorses(horses);
+  updateStatus("Computing scores...");
+  const scored = analyzeScores(computedHorses);
 
-  renderAnalysisOutput(horses);
+  updateStatus("Rendering results...");
+  renderAnalysis(scored, callMetrics);
+
   updateStatus("Analysis complete.");
+}
+
+// attach to UI button
+document.getElementById("runAnalysis").addEventListener("click", async () => {
+  await runFullAnalysis();
 });
 
-// -----------------------------
-// Window onload: nothing auto-loading (we keep load-on-click)
-// -----------------------------
+// ready
 window.addEventListener("load", () => {
-  // UI sanity
   const statusEl = document.getElementById("pdfStatus");
-  if (statusEl && statusEl.textContent.trim() === "") statusEl.textContent = "No file loaded.";
-  console.log("Analyzer ready. Click Run Analysis to start.");
+  if (statusEl && statusEl.textContent.trim() === "") statusEl.textContent = "Ready — click Run Analysis.";
+  console.log("Analyzer ready.");
 });
