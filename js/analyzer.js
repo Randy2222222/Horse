@@ -1,4 +1,5 @@
 // js/analyzer.js (instrumented test version)
+const GITHUB_PDF_URL = "https://raw.githubusercontent.com/Randy2222222/REPO/main/bw_pdf_viewer.php.pdf";
 console.log("analyzer.js: script loaded");
 
 let loadedPDF = null;   // Will store the PDF object after loading
