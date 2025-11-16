@@ -1,12 +1,10 @@
-
 // ===============================
 // PDF LOADING SYSTEM
 // ===============================
-// MUST COME FIRST — Safari requires this BEFORE any PDF.js calls
+
+// REQUIRED for PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
-
-
 
 let pdfText = "";
 
@@ -18,7 +16,6 @@ async function handlePDF(event) {
   document.getElementById("pdfStatus").innerText = "Reading PDF...";
 
   const arrayBuffer = await file.arrayBuffer();
-    log("ArrayBuffer loaded");
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
   let fullText = "";
@@ -43,13 +40,13 @@ function analyzePDF() {
     return;
   }
 
-  // Parsing will go here later
+  // Parsing code will go here
 }
 
 // ===============================
 // CONFIGURATION
 // ===============================
-const LENGTH_TO_SEC = 1 / 6; // placeholder until LPS table is integrated
+const LENGTH_TO_SEC = 1 / 6;
 
 const weights = {
   speed: 0.4,
@@ -168,6 +165,10 @@ function analyzeRace() {
 
   document.body.appendChild(box);
 }
+
+// ===============================
+// EVENT LISTENERS
+// ===============================
 window.onload = () => {
   document.getElementById("pdfFile").addEventListener("change", handlePDF);
   document.getElementById("runAnalysis").addEventListener("click", analyzePDF);
