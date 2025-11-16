@@ -1,80 +1,57 @@
 // js/analyzer.js (instrumented test version)
-// Paste this entire file over your current analyzer.js, test, then remove the small alerts afterwards.
+console.log("analyzer.js: script loaded");
 
-// Quick load check (remove later)
-try {
-  // small visual confirmation that the script executed
-  alert("analyzer.js: script loaded");
-} catch (e) {
-  // ignore if alerts are blocked
-  console.log("analyzer.js loaded (no alert)");
-}
+let loadedPDF = null;   // Will store the PDF object after loading
 
-// Try to locate pdfjsLib in the most common global places
-const pdfjsLib =
-  window['pdfjs-dist/build/pdf'] || // some builds
-  window.pdfjsLib ||               // typical CDN build (pdf.min.js)
-  null;
-
-if (!pdfjsLib) {
-  // If pdfjsLib cannot be found, show a clear message
-  alert("ERROR: pdfjsLib not found. Make sure pdf.min.js is loaded in <head>.");
-  throw new Error("pdfjsLib not found");
-}
-
-// REQUIRED for PDF.js worker — set it safely
-if (pdfjsLib.GlobalWorkerOptions) {
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
-} else {
-  alert("WARNING: pdfjsLib.GlobalWorkerOptions not present (unexpected).");
-}
-
-// ======= PDF loader state =======
-let pdfText = "";
-
-// --- SINGLE VALID PDF HANDLER ---
-async function handlePDF(event) {
-  try {
+// -------------------------
+// 1. FILE UPLOAD LISTENER
+// -------------------------
+document.getElementById("pdfFile").addEventListener("change", async function (event) {
     const file = event.target.files[0];
-    if (!file) return;
-
-    const statusEl = document.getElementById("pdfStatus");
-    if (statusEl) statusEl.innerText = "Reading PDF...";
-
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-    let fullText = "";
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const strings = content.items.map(item => item.str);
-      fullText += strings.join(" ") + "\n\n";
+    if (!file) {
+        updateStatus("No file selected.");
+        return;
     }
 
-    pdfText = fullText;
+    updateStatus("Reading PDF...");
 
-    if (statusEl) {
-      statusEl.innerText = "PDF Loaded Successfully (" + pdf.numPages + " pages)";
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+
+        // Load PDF using pdf.js
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        loadedPDF = pdf;
+
+        updateStatus(`PDF loaded successfully! Pages: ${pdf.numPages}`);
+        console.log("PDF loaded:", pdf);
+
+    } catch (err) {
+        console.error("PDF load error:", err);
+        updateStatus("Error loading PDF.");
     }
-  } catch (err) {
-    // Visible error so we can debug on iPad
-    alert("Error reading PDF: " + (err && err.message ? err.message : err));
-    console.error("handlePDF error", err);
-  }
-}
+});
 
-// --- ANALYZE PDF ---
-function analyzePDF() {
-  if (!pdfText) {
-    alert("Please upload a PDF first.");
-    return;
-  }
+// -----------------------------
+// 2. RUN ANALYSIS BUTTON
+// -----------------------------
+document.getElementById("runAnalysis").addEventListener("click", function () {
 
-  // Parsing code will go here (left intentionally empty for now)
-  alert("analyzePDF: PDF text present (length: " + pdfText.length + ")");
+    if (!loadedPDF) {
+        updateStatus("❌ No PDF loaded. Please upload a file first.");
+        return;
+    }
+
+    updateStatus("Running analysis... (not implemented yet)");
+
+    // Later: Here we will parse text and analyze horses
+});
+
+// -----------------------------
+// Helper: update UI status text
+// -----------------------------
+function updateStatus(msg) {
+    document.getElementById("pdfStatus").textContent = msg;
 }
 
 // ===============================
