@@ -1,7 +1,12 @@
 console.log("PDF direct-load test running");
 
+// FIX SAFARI WORKER ISSUE
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.111/pdf.worker.min.js";
+
 const TEST_PDF_URL =
   "https://raw.githubusercontent.com/Randy2222222/Horse/main/bw_pdf_viewer.php.pdf";
+
 
 // Status UI helper
 function updateStatus(msg) {
