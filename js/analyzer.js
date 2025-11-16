@@ -36,16 +36,23 @@ document.getElementById("pdfFile").addEventListener("change", async function (ev
 // -----------------------------
 // 2. RUN ANALYSIS BUTTON
 // -----------------------------
-document.getElementById("runAnalysis").addEventListener("click", function () {
+document.getElementById("runAnalysis").addEventListener("click", async function () {
 
-    if (!loadedPDF) {
-        updateStatus("❌ No PDF loaded. Please upload a file first.");
-        return;
+    updateStatus("Loading PDF from GitHub...");
+
+    try {
+        const pdf = await pdfjsLib.getDocument(GITHUB_PDF_URL).promise;
+
+        loadedPDF = pdf;
+
+        updateStatus(`PDF loaded! Pages: ${pdf.numPages}`);
+
+        console.log("PDF loaded:", pdf);
+
+    } catch (err) {
+        console.error("PDF load error:", err);
+        updateStatus("❌ Error loading PDF from GitHub.");
     }
-
-    updateStatus("Running analysis... (not implemented yet)");
-
-    // Later: Here we will parse text and analyze horses
 });
 
 // -----------------------------
