@@ -25,6 +25,13 @@ window.onload = async () => {
 
     console.log("PDF loaded!", pdf);
     updateStatus(`PDF Loaded! Pages: ${pdf.numPages}`);
+    // Test reading page 1 text
+const page = await pdf.getPage(1);
+const content = await page.getTextContent();
+const text = content.items.map(i => i.str).join(" ");
+
+console.log("PAGE 1 TEXT:", text);
+updateStatus("PDF loaded and text extracted!");
 
     // Try reading page 1 text
     const page = await pdf.getPage(1);
