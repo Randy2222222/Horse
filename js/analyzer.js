@@ -12,10 +12,7 @@ let pdfText = "";
 
 // --- SINGLE VALID PDF HANDLER ---
 async function handlePDF(event) {
-    log("handlePDF triggered");
-  console.log("HANDLE PDF FIRED");
   const file = event.target.files[0];
-    log("File object = " + file);
   if (!file) return;
 
   document.getElementById("pdfStatus").innerText = "Reading PDF...";
@@ -45,9 +42,6 @@ function analyzePDF() {
     alert("Please upload a PDF first.");
     return;
   }
-
-  console.log("=== RAW PDF TEXT ===");
-  console.log(pdfText);
 
   // Parsing will go here later
 }
