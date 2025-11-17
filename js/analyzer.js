@@ -109,18 +109,26 @@ function formatRaceTimeRaw(sec) {
 }
 
 // ---------------- CALL_TABLE helper ----------------
+function normalizeDist(d) {
+  return String(d)
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function findCallRowForDistance(distanceLabel) {
-  if (typeof CALL_TABLE === "undefined") {
-    console.error("CALL_TABLE not found. Ensure js/calls.js is loaded before analyzer.js");
-    return null;
-  }
   if (!distanceLabel) return CALL_TABLE[0];
-  const norm = String(distanceLabel).toLowerCase().replace(/\s+/g, "");
-  // match flexible: "6", "6f", "1m", "1m1/16" etc.
+
+  const norm = normalizeDist(distanceLabel);
+
   for (const row of CALL_TABLE) {
-    const rdist = String(row.dist).toLowerCase().replace(/\s+/g, "");
-    if (rdist === norm || rdist === norm.replace("f","")) return row;
+    if (normalizeDist(row.dist) === norm) {
+      return row;
+    }
   }
+
+  return CALL_TABLE[0];
+}
   // numeric closests
   const dnum = parseFloat(norm);
   if (!isNaN(dnum)) {
