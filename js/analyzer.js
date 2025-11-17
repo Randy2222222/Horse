@@ -450,4 +450,12 @@ window.addEventListener("load", () => {
   const statusEl = document.getElementById("pdfStatus");
   if (statusEl && statusEl.textContent.trim() === "") statusEl.textContent = "Ready — click Run Analysis.";
   console.log("Analyzer ready.");
+  // DEBUG: show extracted PDF text on screen
+function showRawPdfText() {
+  const win = window.open("", "_blank");
+  win.document.write("<pre style='white-space: pre-wrap; font-size: 12px;'>"
+                     + (window._pdfText || "NO TEXT LOADED")
+                     + "</pre>");
+  win.document.close();
+}
 });
