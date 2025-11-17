@@ -392,7 +392,10 @@ async function runFullAnalysis() {
   updateStatus("Loading and extracting PDF...");
   const ok = await loadPdfAndExtractText();
   if (!ok) return;
-
+// === PARSE THE BRISNET PDF USING parser.js ===
+const parsed = parsePPBlock(extractedText);
+console.log("PARSED HEADER:", parsed.header);
+console.log("PARSED PPS:", parsed.pastPerformances);
   updateStatus("Detecting race distance...");
   let detected = detectRaceDistanceFromText(extractedText);
   if (detected) {
