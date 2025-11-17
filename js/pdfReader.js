@@ -2,16 +2,16 @@
 // iPad-friendly FileReader-based PDF loader for pdf.js
 // Requires <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.min.js"></script> in <head>
 
-(function () {
+// comment out (function () {
   // find pdfjs global
-  const pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib || null;
-  if (!pdfjsLib) {
-    console.error("pdfReader: pdfjsLib not found. Make sure pdf.min.js is in <head>.");
+  //const pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib || null;
+//  if (!pdfjsLib) {
+   // console.error("pdfReader: pdfjsLib not found. Make sure pdf.min.js is in <head>.");
     // show status if element exists
-    const st = document.getElementById("pdfStatus");
-    if (st) st.textContent = "ERROR: pdf.js not loaded.";
-    return;
-  }
+   // const st = document.getElementById("pdfStatus");
+   // if (st) st.textContent = "ERROR: pdf.js not loaded.";
+   // return;
+  // }
 
   // set worker (must set before getDocument in some environments) comment out next 4 lines
   //if (pdfjsLib.GlobalWorkerOptions) {
