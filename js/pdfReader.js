@@ -13,7 +13,7 @@ if (!pdfjsLib) {
    return;
    }
 
-   set worker (must set before getDocument in some environments)
+   //set worker (must set before getDocument in some environments)
    if (pdfjsLib.GlobalWorkerOptions) {
    pdfjsLib.GlobalWorkerOptions.workerSrc =
    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
