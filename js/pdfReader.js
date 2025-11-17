@@ -3,11 +3,11 @@
 // Requires <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.min.js"></script> in <head>
 
 (function () {
-  find pdfjs global
+ // find pdfjs global
   const pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib || null;
 if (!pdfjsLib) {
    console.error("pdfReader: pdfjsLib not found. Make sure pdf.min.js is in <head>.");
-    show status if element exists
+   // show status if element exists
    const st = document.getElementById("pdfStatus");
   if (st) st.textContent = "ERROR: pdf.js not loaded.";
    return;
