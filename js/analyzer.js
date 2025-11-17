@@ -177,8 +177,6 @@ async function loadPdfAndExtractText(url = PDF_URL) {
       full += pageText + "\n\n";
     }
     extractedText = full;
-    document.getElementById("rawPdfText").textContent = full;
-document.getElementById("rawPdfText").style.display = "block";
     window._pdfText = full; // handy for debugging
     updateStatus("PDF text extracted.");
     return true;
