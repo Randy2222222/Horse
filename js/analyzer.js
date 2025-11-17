@@ -1,23 +1,22 @@
-// js/analyzer.js — Final full analyzer (Option B) with your SPL math + formatting rules
-// - Requires: pdf.min.js loaded in <head>
-// - Requires: js/calls.js -> provides CALL_TABLE (loaded BEFORE this file)
-// - Requires: jockey_stats.txt at repo root (or edit path in loadJockeyStats)
-// - Edits: paste into js/analyzer.js and test (parser refinement likely needed once on real PDF)
+// js/analyzer.js — Clean final analyzer
+// Requirements:
+// - pdf.min.js loaded in <head>
+// - js/calls.js defines CALL_TABLE (load before this file)
+// - jockey_stats.txt optional at repo root
 
-// Quick ready message
-console.log("analyzer.js: FINAL analyzer loaded");
+console.log("analyzer.js: clean analyzer loaded");
 
 // ---------------- CONFIG ----------------
 const PDF_URL = "https://raw.githubusercontent.com/Randy2222222/Horse/main/bw_pdf_viewer.php.pdf";
 
-// small length tokens mapping (you can adjust values)
+// small length tokens mapping
 const LENGTH_TOKEN_MAP = {
   "hd": 0.1, "hd.": 0.1, "head": 0.1,
   "nk": 0.25, "nk.": 0.25, "neck": 0.25,
   "shd": 0.2, "nose": 0.05
 };
 
-// weights (confirmed)
+// scoring weights
 const weights = {
   speed: 0.4,
   workouts: 0.15,
@@ -37,8 +36,8 @@ if (window.pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
 // ---------------- globals ----------------
 let jockeyStatsMap = {};
 let extractedText = "";
-let RACE_DISTANCE = undefined; // set manually or auto-detect
-let CALL_INFO = null; // from CALL_TABLE
+let RACE_DISTANCE = undefined;
+let CALL_INFO = null;
 
 // ---------------- UI helper ----------------
 function updateStatus(msg) {
@@ -48,7 +47,6 @@ function updateStatus(msg) {
 }
 
 // ---------------- time helpers ----------------
-// parse time string to seconds (accepts "1:12.34" or "72.34")
 function toSeconds(timeStr) {
   if (timeStr == null) return 0;
   const s = String(timeStr).trim();
@@ -61,7 +59,19 @@ function toSeconds(timeStr) {
   return Number(s);
 }
 
-// parse length tokens into numeric lengths (in horse lengths)
+function formatRaceTimeRaw(sec) {
+  if (sec == null || isNaN(sec)) return "-";
+  const rounded = Math.round(Number(sec) * 100) / 100; // 2 decimals
+  if (rounded < 60) {
+    return rounded.toFixed(2);
+  } else {
+    const minutes = Math.floor(rounded / 60);
+    const secs = (rounded % 60).toFixed(2).padStart(5, "0");
+    return `${minutes}:${secs}`;
+  }
+}
+
+// ---------------- length parsing ----------------
 function parseLengthToken(tok) {
   if (tok == null) return null;
   const raw = String(tok).trim().toLowerCase();
@@ -85,32 +95,21 @@ function parseLengthToken(tok) {
   return isNaN(n) ? null : n;
 }
 
-// compute LpS and SPL for a call: LpS = (distance_ft / leaderTimeSec) / 10 ; SPL = 1 / LpS
+// ---------------- LPS / SPL math ----------------
 function computeLpS_and_SPL(callDistanceFeet, leaderCallTimeSec) {
   if (!callDistanceFeet || !leaderCallTimeSec) return { lps: 0, spl: 0 };
   const lps = (callDistanceFeet / leaderCallTimeSec) / 10;
   const spl = lps ? (1 / lps) : 0;
   return { lps, spl };
 }
-
-// format seconds to racing display per your rule:
-// - if sec < 60 -> "ss.ff" (no leading 0:)
-// - if sec >= 60 -> "m:SS.ff" (seconds always two digits)
-function formatRaceTimeRaw(sec) {
-  if (sec == null || isNaN(sec)) return "-";
-  const rounded = Math.round(Number(sec) * 100) / 100; // round to 2 decimals
-  if (rounded < 60) {
-    return rounded.toFixed(2);
-  } else {
-    const minutes = Math.floor(rounded / 60);
-    const secs = (rounded % 60).toFixed(2).padStart(5, "0");
-    return `${minutes}:${secs}`;
-  }
+function lengthsToSeconds(lengths, spl) {
+  if (!spl || lengths == null) return 0;
+  return Number(lengths) * spl;
 }
 
 // ---------------- CALL_TABLE helper ----------------
 function normalizeDist(d) {
-  return String(d)
+  return String(d || "")
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim();
@@ -118,30 +117,19 @@ function normalizeDist(d) {
 
 function findCallRowForDistance(distanceLabel) {
   if (!distanceLabel) return CALL_TABLE[0];
-
   const norm = normalizeDist(distanceLabel);
 
+  // exact normalized match
   for (const row of CALL_TABLE) {
-    if (normalizeDist(row.dist) === norm) {
-      return row;
-    }
+    if (normalizeDist(row.dist) === norm) return row;
   }
 
-  return CALL_TABLE[0];
-}
-  // numeric closests
-  const dnum = parseFloat(norm);
-  if (!isNaN(dnum)) {
-    let best = null; let bestDiff = Infinity;
-    for (const row of CALL_TABLE) {
-      const r = Number(row.dist);
-      if (!isNaN(r)) {
-        const diff = Math.abs(r - dnum);
-        if (diff < bestDiff) { bestDiff = diff; best = row; }
-      }
-    }
-    if (best) return best;
+  // substring tolerant match (helpful for small OCR / punctuation differences)
+  for (const row of CALL_TABLE) {
+    const rnorm = normalizeDist(row.dist);
+    if (norm.includes(rnorm) || rnorm.includes(norm)) return row;
   }
+
   return CALL_TABLE[0];
 }
 
@@ -150,20 +138,17 @@ async function loadJockeyStats() {
   jockeyStatsMap = {};
   try {
     const res = await fetch("jockey_stats.txt");
-    if (!res.ok) {
-      console.warn("jockey_stats.txt not found; continuing without jockey map.");
-      return;
-    }
+    if (!res.ok) return;
     const text = await res.text();
     const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     for (const line of lines) {
       const csv = line.split(",").map(s => s.trim());
       if (csv.length >= 2 && !isNaN(Number(csv[1]))) {
-        jockeyStatsMap[csv[0]] = Number(csv[1]); continue;
+        jockeyStatsMap[csv[0]] = Number(csv[1]);
+        continue;
       }
       const m = line.match(/^(.+?)[:\-]\s*([0-9.]+)/);
       if (m) { jockeyStatsMap[m[1].trim()] = Number(m[2]); continue; }
-      // fallback: last token numeric
       const toks = line.split(/\s+/);
       const last = toks[toks.length - 1];
       if (!isNaN(Number(last))) {
@@ -177,11 +162,11 @@ async function loadJockeyStats() {
   }
 }
 
-// ---------------- PDF load + text extraction ----------------
-async function loadPdfAndExtractText() {
+// ---------------- PDF load + extract ----------------
+async function loadPdfAndExtractText(url = PDF_URL) {
   updateStatus("Loading PDF...");
   try {
-    const loadingTask = pdfjsLib.getDocument({ url: PDF_URL });
+    const loadingTask = pdfjsLib.getDocument({ url });
     const pdf = await loadingTask.promise;
     updateStatus(`PDF loaded (${pdf.numPages} pages). Extracting text...`);
     let full = "";
@@ -192,7 +177,7 @@ async function loadPdfAndExtractText() {
       full += pageText + "\n\n";
     }
     extractedText = full;
-    window._pdfText = full;
+    window._pdfText = full; // handy for debugging
     updateStatus("PDF text extracted.");
     return true;
   } catch (err) {
@@ -202,12 +187,22 @@ async function loadPdfAndExtractText() {
   }
 }
 
-// ---------------- parse leader times (best-effort) ----------------
+// ---------------- detect race distance ----------------
+function detectRaceDistanceFromText(pdfText) {
+  if (!pdfText) return null;
+  const flat = normalizeDist(pdfText);
+  for (const row of CALL_TABLE) {
+    const r = normalizeDist(row.dist);
+    if (flat.indexOf(r) !== -1) return row.dist;
+  }
+  return null;
+}
+
+// ---------------- parse leader times ----------------
 function extractLeaderTimes(pdfText) {
   const out = { first: null, second: null, str: null, fin: null };
   if (!pdfText) return out;
   const flat = pdfText.replace(/\s+/g, " ");
-  // try labelled patterns
   const m1 = flat.match(/(?:1st(?:\s*call)?|first)\s*[:\-]?\s*(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/i);
   if (m1) out.first = toSeconds(m1[1]);
   const m2 = flat.match(/(?:2nd(?:\s*call)?|second)\s*[:\-]?\s*(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/i);
@@ -216,7 +211,6 @@ function extractLeaderTimes(pdfText) {
   if (m3) out.str = toSeconds(m3[1]);
   const m4 = flat.match(/(?:fin(?:al)?|finish)\s*[:\-]?\s*(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/i);
   if (m4) out.fin = toSeconds(m4[1]);
-  // fallback: if final missing, try last time token
   const timeRegex = /(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/g;
   const times = flat.match(timeRegex) || [];
   if (!out.fin && times.length) out.fin = toSeconds(times[times.length - 1]);
@@ -226,7 +220,7 @@ function extractLeaderTimes(pdfText) {
   return out;
 }
 
-// ---------------- parse horses and lengths (scaffold) ----------------
+// ---------------- parse horses (scaffold — refine with real PDF text if needed) ----------------
 function parseHorsesFromText(pdfText) {
   const lines = pdfText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const horses = [];
@@ -235,7 +229,6 @@ function parseHorsesFromText(pdfText) {
     const line = lines[i];
     const timeMatch = line.match(timeRx);
     if (!timeMatch) continue;
-    // probable name is previous line if it has letters and few digits
     const prev = i > 0 ? lines[i - 1] : null;
     let name = null;
     if (prev && /[A-Za-z]/.test(prev) && !/\d/.test(prev)) name = prev;
@@ -252,10 +245,8 @@ function parseHorsesFromText(pdfText) {
       finalTimeS: finalTime,
       callLengths: { first: null, second: null, str: null, fin: 0 }
     };
-    // look forward a few lines for lengths tokens
     for (let k = 0; k < 6 && (i + k) < lines.length; k++) {
       const probe = lines[i + k];
-      // tokens that look like length tokens in a row
       const tokens = probe.split(/\s+/);
       const lenTokens = tokens.filter(t => {
         return /^\d+(\.\d+)?$/.test(t) || /^\d+\/\d+$/.test(t) || /^[0-9]+\s+[0-9]\/[0-9]+$/.test(t)
@@ -270,7 +261,6 @@ function parseHorsesFromText(pdfText) {
         if (l2 !== null) horse.callLengths.str = l2;
         break;
       }
-      // try dash pattern: "4-4-3-1"
       const dash = probe.match(/(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)-?(\d+(?:\.\d+)?)?/);
       if (dash) {
         horse.callLengths.first = parseLengthToken(dash[1]);
@@ -288,7 +278,6 @@ function parseHorsesFromText(pdfText) {
 function computeCallTimesForRace(horses, leaderTimes, callFeet) {
   const calls = ["first", "second", "str", "fin"];
   const callLabelMap = { first: "1st", second: "2nd", str: "str", fin: "fin" };
-  // compute metrics
   const callMetrics = {};
   for (const c of calls) {
     const label = callLabelMap[c];
@@ -301,7 +290,6 @@ function computeCallTimesForRace(horses, leaderTimes, callFeet) {
       callMetrics[c] = { ft, leaderT: null, lps: 0, spl: 0 };
     }
   }
-  // assign per-horse times
   for (const h of horses) {
     h.calculatedCalls = { first: null, second: null, str: null, fin: null };
     for (const c of calls) {
@@ -325,10 +313,6 @@ function computeCallTimesForRace(horses, leaderTimes, callFeet) {
     if (!h.calculatedCalls.fin && h.finalTimeS) h.calculatedCalls.fin = h.finalTimeS;
   }
   return { horses, callMetrics };
-}
-function lengthsToSeconds(lengths, spl) {
-  if (!spl) return 0;
-  return Number(lengths) * spl;
 }
 
 // ---------------- scoring ----------------
@@ -408,11 +392,12 @@ async function runFullAnalysis() {
   if (!ok) return;
 
   updateStatus("Detecting race distance...");
-  let detected = null;
-  const dmatch = extractedText.match(/\b(\d+(?:\.\d+)?\s?f|1m(?:\s?1\/16|1\/8)?|1\s?1\/16|1\s?1\/8)\b/i);
-  if (dmatch) {
-    detected = dmatch[0].replace(/\s+/g,"");
+  let detected = detectRaceDistanceFromText(extractedText);
+  if (detected) {
     RACE_DISTANCE = detected;
+  } else {
+    const dmatch = extractedText.match(/\b(\d+(?:\s+\d\/\d+)?(?:\s?m(?:\s?\d+\s?yds)?)?)\b/i);
+    if (dmatch) RACE_DISTANCE = dmatch[0].trim();
   }
   CALL_INFO = findCallRowForDistance(RACE_DISTANCE);
 
@@ -424,13 +409,21 @@ async function runFullAnalysis() {
   let horses = parseHorsesFromText(extractedText);
   console.log("Parsed horses (count):", horses.length, horses);
 
+  // IMPORTANT: no demo horses inserted here — if parse fails you'll get empty array.
+  // If you'd like a safe fallback, uncomment the lines below:
+  /*
   if (!horses || horses.length === 0) {
     const s1 = { name: "Sample A", jockey: "Sample J", finalTimeS: 92.4, callLengths: { first:0, second:0, str:0, fin:0 } };
     const s2 = { name: "Sample B", jockey: "Sample J2", finalTimeS: 94.1, callLengths: { first:2, second:2, str:1, fin:0 } };
     horses = [s1, s2];
   }
+  */
 
   updateStatus("Computing call times using SPL math...");
+  if (!CALL_INFO) {
+    updateStatus("No CALL_TABLE row found for detected distance — using first row as fallback.");
+    CALL_INFO = CALL_TABLE[0];
+  }
   const callFeet = { "1st": CALL_INFO["1st"], "2nd": CALL_INFO["2nd"], "str": CALL_INFO["str"], "fin": CALL_INFO["fin"] };
   const { horses: computedHorses, callMetrics } = computeCallTimesForRace(horses, leaderTimes, callFeet);
 
@@ -443,13 +436,17 @@ async function runFullAnalysis() {
   updateStatus("Analysis complete.");
 }
 
-// attach to UI button
-document.getElementById("runAnalysis").addEventListener("click", async () => {
-  await runFullAnalysis();
-});
-
-// ready
+// attach to UI button safely
 window.addEventListener("load", () => {
+  const fileEl = document.getElementById("pdfFile");
+  const runBtn = document.getElementById("runAnalysis");
+  if (fileEl) fileEl.addEventListener("change", () => {
+    // user file input is optional in your current setup; this handler exists if you keep the input.
+    updateStatus("File input changed. Use Run Analysis to process.");
+  });
+  if (runBtn) runBtn.addEventListener("click", async () => {
+    await runFullAnalysis();
+  });
   const statusEl = document.getElementById("pdfStatus");
   if (statusEl && statusEl.textContent.trim() === "") statusEl.textContent = "Ready — click Run Analysis.";
   console.log("Analyzer ready.");
