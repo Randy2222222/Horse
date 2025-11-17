@@ -411,8 +411,8 @@ console.log("PARSED PPS:", parsed.pastPerformances);
   console.log("Leader times:", leaderTimes);
 
   updateStatus("Parsing horses and call lengths...");
-  let horses = parseHorsesFromText(extractedText);
-  console.log("Parsed horses (count):", horses.length, horses);
+  let horses = parsed.pastPerformances;
+console.log("Parsed horses (count):", horses.length, horses);
 
   // IMPORTANT: no demo horses inserted here — if parse fails you'll get empty array.
   // If you'd like a safe fallback, uncomment the lines below:
