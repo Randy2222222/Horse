@@ -1,332 +1,218 @@
 // js/parser.js
-// Brisnet PDF text parser (best-effort) for your analyzer
-// Requires: CALL_TABLE (from js/calls.js) to be loaded first.
-// Usage: call parsePdfText(pdfText) or runParserOnExtractedText() after the PDF text has been extracted.
+// Layout-tuned Brisnet PP parser — tuned to the sample you provided.
+// Use: const parsed = parsePPBlock(rawText);
 
-// Quick ready log
-console.log("parser.js loaded");
-
-// ---------------------- Normalizers ----------------------
-function unicodeFractionsToText(s) {
-  if (!s) return s;
-  return s
-    .replace(/\u00BC/g, " 1/4") // ¼
-    .replace(/\u00BD/g, " 1/2") // ½
-    .replace(/\u00BE/g, " 3/4"); // ¾
-}
-
-function stripWeirdMarks(s) {
-  if (!s) return s;
-  // remove non-printing/box characters commonly found in PDF-to-text dumps
-  return s.replace(/[\u00A0\u200B\u200C\u200D\uFEFF]/g, " ")
-          .replace(/[¨©«ª°‡†]/g, " ")
-          .replace(/[^\x09\x0A\x0D\x20-\x7E\u00BC\u00BD\u00BE]/g, " ");
-}
-
-function normalizeWhitespace(s) {
-  return s.replace(/\r\n/g, "\n").replace(/\t/g, " ").replace(/[ \u00A0]+/g, " ").trim();
-}
-
-// Normalizes an incoming distance string to the exact format used in CALL_TABLE.
-// Examples:
-//  "6½" -> "6 1/2"
-//  "6f"  -> "6"
-//  "1m" or "1 Mile" -> "1 m"
-//  "1m70" -> "1 m 70 yds"
-function normalizeDistForLookup(d) {
-  if (!d) return "";
-  let t = String(d).toLowerCase().trim();
-
-  // sanitize and remove trailing punctuation
-  t = t.replace(/[.,;:]$/g, "").trim();
-
-  // unicode fractions
-  t = unicodeFractionsToText(t);
-
-  // common PDF noise
-  t = t.replace(/\s*feet\b/g, " ");
-  t = t.replace(/\s*yds?\b/g, " yds");
-  t = t.replace(/\s*miles?\b/g, " m");
-  t = t.replace(/\s+mile\b/g, " m");
-  t = t.replace(/\s*ft\b/g, " ");
-  t = t.replace(/\s*fm\b/g, " "); // sometimes shows "1m fm" or similar
-
-  // Convert "6f" -> "6"
-  t = t.replace(/(\d+)\s*f\b/g, "$1");
-
-  // Normalize a compact 1m70 (or 1m70y) into "1 m 70 yds"
-  t = t.replace(/^(\d+)\s*m\s*70\s*yds?/g, "$1 m 70 yds");
-  t = t.replace(/^(\d+)m70\b/, "$1 m 70 yds");
-  t = t.replace(/^(\d+)m\b/, "$1 m"); // "1m" -> "1 m"
-
-  // Turn "6 1/2" stays as is (we want "6 1/2")
-  // collapse whitespace
-  t = t.replace(/\s+/g, " ").trim();
-
-  return t;
-}
-
-// find row in CALL_TABLE that matches distance (uses normalizeDistForLookup)
-function findCallRow(distanceLabel) {
-  if (typeof CALL_TABLE === "undefined") {
-    console.warn("CALL_TABLE not found (parser needs js/calls.js).");
-    return null;
-  }
-  if (!distanceLabel) return CALL_TABLE[0];
-
-  const want = normalizeDistForLookup(distanceLabel);
-  if (!want) return CALL_TABLE[0];
-
-  for (const row of CALL_TABLE) {
-    if (normalizeDistForLookup(row.dist) === want) return row;
-  }
-
-  // If no exact match, try numeric closests (compare whole-mile/furlong numbers)
-  const wantNum = parseFloat(want);
-  if (!isNaN(wantNum)) {
-    let best = CALL_TABLE[0];
-    let bestDiff = Infinity;
-    for (const r of CALL_TABLE) {
-      const rn = parseFloat(String(r.dist).replace(/[^\d.]/g, ""));
-      if (!isNaN(rn)) {
-        const diff = Math.abs(rn - wantNum);
-        if (diff < bestDiff) { bestDiff = diff; best = r; }
-      }
-    }
-    return best;
-  }
-
-  return CALL_TABLE[0];
-}
-
-// ---------------------- Extractors ----------------------
-
-// Attempt to find a single race distance string in the PDF text (heuristic)
-function extractRaceDistance(pdfText) {
-  if (!pdfText) return null;
-  // common patterns found in your pasted sample: "1 Mile", "1m", "6½", "6 1/2" etc.
-  // We'll run a few regexes to find the first plausible distance token.
-  const lookPatterns = [
-    /\b(\d+\s?½|\d+\s?1\/2|\d+\s?1\/4|\d+\s?3\/4)\b/g,   // unicode fractions or typed fractions
-    /\b(\d+\s?m(?:\s?\d+\s?yds?)?)\b/gi,                // "1 m", "1m70", "1 m 70 yds"
-    /\b(\d+\s?f)\b/gi,                                  // "6f", "7f"
-    /\b(\d+\s?\/\s?16|\d+\s?1\/16|\d+\s?1\/8)\b/gi,     // fractional mile notations
-    /\b(\d+(?:\.\d+)?\s?f?)\b/g                         // fallback numbers with optional f
-  ];
-
-  for (const pat of lookPatterns) {
-    const m = pdfText.match(pat);
-    if (m && m.length) {
-      // pick a candidate that appears near "Race" or "Mdn" or the header if possible
-      for (const cand of m) {
-        const norm = normalizeDistForLookup(cand);
-        if (norm) return norm;
-      }
-      return normalizeDistForLookup(m[0]);
-    }
-  }
-  return null;
-}
-
-// Split pdf text into horse blocks using the "ppN" markers
-function splitIntoHorseBlocks(pdfText) {
-  if (!pdfText) return [];
-  // Normalize line breaks and ensure 'pp' tokens are isolated
-  const txt = pdfText.replace(/\r\n/g, "\n");
-  // We'll create a marker: replace "pp" followed by number with a unique splitter
-  // The PDF seems to use 'pp1', 'pp2', etc. We'll match case-insensitive and with possible whitespace.
-  const marker = "__PP_SPLIT__";
-  const replaced = txt.replace(/pp\s*(\d{1,2})/gi, match => `\n${marker}${match.toLowerCase()}\n`);
-  // Split on marker and drop anything before the first marker (header)
-  const parts = replaced.split(marker).map(s => s.trim()).filter(Boolean);
-  // Each part now starts with "ppX ..." or some header; filter to parts that actually begin with 'pp'
-  const horseParts = parts.filter(p => /^pp\s*\d{1,2}/i.test(p));
-  return horseParts;
-}
-
-// Extract a clean horse name (best-effort), jockey, and a final time from a horse block
-function parseHorseBlock(blockText) {
-  const lines = blockText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  const joined = lines.join(" ");
-  const result = {
-    raw: blockText,
-    idMarker: null, // pp# token
-    name: null,
-    jockey: null,
-    trainer: null,
-    owner: null,
-    finalTimeS: null,
-    callLengths: { first: null, second: null, str: null, fin: null },
-    workouts: []
-  };
-
-  // idMarker: pick the leading "ppX"
-  const mpp = joined.match(/^pp\s*(\d{1,2})/i);
-  if (mpp) result.idMarker = "pp" + mpp[1];
-
-  // find a probable name: Typically the name appears just after pp# and before parentheses or (S 0)
-  const nameMatch = joined.match(/^pp\s*\d{1,2}\s+([A-Z0-9][A-Za-z0-9'\-\. ]{2,80}?)(?:\s*\(|\s{2,}|\s+Own:|\s+Life:|\s+Sire:|\,)/i);
-  if (nameMatch) result.name = nameMatch[1].trim();
-
-  // jockey: look for uppercase name in parentheses, or after name line "JOCKEY" or known caps with last name
-  let jk = null;
-  // pattern "  JOCKEYNAME (## #-#-# #-%)" often appears like "HERNANDEZ JUAN J (18 3-3-3 17%)"
-  const jkMatch = joined.match(/([A-Z][A-Z' ]{2,40}[A-Z])\s*\(\d{1,3}\s*\d?[-\d\s]*%?\)/);
-  if (jkMatch) jk = jkMatch[1].trim();
-  if (!jk) {
-    // fallback: find " JockeyName " followed by parenthesis with stats
-    const j2 = joined.match(/([A-Z][A-Za-z'\-]{2,40}\s+[A-Z][A-Za-z'\-]{1,40})\s*\(\d/);
-    if (j2) jk = j2[1].trim();
-  }
-  result.jockey = jk || null;
-
-  // trainer (Trnr:) and owner (Own:)
-  const tr = joined.match(/Trnr:\s*([A-Za-z0-9 \.\-']{2,60})/i);
-  if (tr) result.trainer = tr[1].trim();
-  const ow = joined.match(/Own:\s*([A-Za-z0-9 \.\-']{2,60})/i);
-  if (ow) result.owner = ow[1].trim();
-
-  // final time: look for time tokens like 1:35.12 OR 95.12
-  const timeRx = /(\d+:\d{2}\.\d{1,2}|\d{1,3}\.\d{1,2})/g;
-  const tAll = joined.match(timeRx) || [];
-  if (tAll.length) {
-    // The final time is often the last time token in the block (best-effort)
-    const finalRaw = tAll[tAll.length - 1];
-    result.finalTimeS = toSeconds(finalRaw);
-  }
-
-  // Extract call-length tokens (we look for three successive length tokens near the PP lines)
-  // Look for patterns like "4-4-3-1" or "4 4 3 1" or "4 1/2 4 3"
-  const callPattern = /(\d+(?:\.\d+)?(?:\s*\d\/\d+)?|(?:\d+\s*\/\s*\d+)|\b(?:hd|nk|nose|shd)\b)/gi;
-
-  // find sequences of three or four length tokens in the block (scan lines)
-  for (const ln of lines.slice(0, 10)) { // examine first few lines where call strings usually live
-    const toks = ln.match(callPattern);
-    if (toks && toks.length >= 3) {
-      // assign first three tokens to 1st, 2nd, str (fin is race finish margin or 0)
-      const parsed = toks.map(t => parseLengthToken(t));
-      if (parsed.length >= 1) result.callLengths.first = parsed[0];
-      if (parsed.length >= 2) result.callLengths.second = parsed[1];
-      if (parsed.length >= 3) result.callLengths.str = parsed[2];
-      break;
-    }
-
-    // dash pattern "4-4-3-1"
-    const dash = ln.match(/(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)-?(\d+(?:\.\d+)?)?/);
-    if (dash) {
-      result.callLengths.first = parseLengthToken(dash[1]);
-      result.callLengths.second = parseLengthToken(dash[2]);
-      result.callLengths.str = parseLengthToken(dash[3]);
-      break;
-    }
-  }
-
-  // parse workouts: pick lines that look like "04Oct Dmr 4f ft :49 H"
-  const wkRx = /(?:\d{2}[A-Za-z]{3}\d{2,4}|\d{2}\/\d{2}\/\d{2,4}|\d{2}[A-Za-z]{3}\d{2})[\s\S]{0,60}?[:\d\.\:]{3,}/g;
-  const wks = blockText.match(wkRx);
-  if (wks && wks.length) {
-    result.workouts = wks.slice(0, 8).map(w => w.trim());
-  }
-
-  return result;
-}
-
-// small util: parse length token strings into numeric lengths (fractions handled)
-function parseLengthToken(tok) {
-  if (tok == null) return null;
-  const raw = String(tok).trim().toLowerCase();
-  // unicode fractions to text
-  const f = unicodeFractionsToText(raw);
-  const clean = f.replace(/\s+/g, "");
-  // mixed number "1 1/2"
-  const mixed = raw.match(/^(\d+)\s+(\d+)\/(\d+)$/);
-  if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]);
-  // fraction only
-  const frac = raw.match(/^(\d+)\/(\d+)$/);
-  if (frac) return Number(frac[1]) / Number(frac[2]);
-  // plain decimal or integer
-  const num = Number(raw.replace(/[^\d\.]/g, ""));
-  if (!isNaN(num)) return num;
-  // tokens like hd, nk
-  const tokens = { hd: 0.1, head: 0.1, nk: 0.25, neck: 0.25, shd: 0.2, nose: 0.05 };
-  if (tokens[raw]) return tokens[raw];
-  return null;
-}
-
-// seconds converter
-function toSeconds(timestr) {
-  if (!timestr) return null;
-  const s = String(timestr).trim();
-  if (s.indexOf(":") >= 0) {
-    const [m, rest] = s.split(":");
+/////////////////////
+// Helpers
+/////////////////////
+function toSeconds(timeStr) {
+  if (!timeStr) return null;
+  const s = String(timeStr).trim();
+  if (!s) return null;
+  // Accept "1:12.34", " :22", "72.34", ":22«" (strip non-digit/colon/dot)
+  const clean = s.replace(/[^\d:\.]/g, "");
+  if (!clean) return null;
+  if (clean.includes(":")) {
+    const [m, sec] = clean.split(":");
     const mm = Number(m) || 0;
-    const ss = Number(rest) || 0;
+    const ss = Number(sec) || 0;
     return mm * 60 + ss;
   }
-  return Number(s);
+  return Number(clean);
 }
 
-// ------------------ Main Parser Entrypoints ------------------
+// Return array of time tokens found in a string (keeps order)
+function extractTimesFromString(str) {
+  if (!str) return [];
+  const timeRegex = /(\d+:\d{2}\.\d{1,2}|\:\d{1,2}|\d{1,3}\.\d{1,2})/g;
+  const found = [];
+  let m;
+  while ((m = timeRegex.exec(str)) !== null) {
+    found.push(m[0]);
+  }
+  return found;
+}
 
-// Parse a full plain-text PDF dump and build structured RACE_DATA
-function parsePdfText(pdfRawText) {
-  if (!pdfRawText) return null;
+// Trim and collapse spaces, but keep single-space separators
+function cleanLine(line) {
+  return line.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
+}
 
-  // 1) cleanup
-  let t = stripWeirdMarks(pdfRawText);
-  t = normalizeWhitespace(t);
+/////////////////////
+// Main parser
+/////////////////////
+function parsePPBlock(rawText) {
+  if (!rawText || !rawText.trim()) return null;
 
-  // 2) normalize some repeated markers to consistent "pp1" casing
-  t = t.replace(/\bPP\s*(\d{1,2})\b/gi, "pp$1"); // PP -> pp
-  t = t.replace(/\bpp\.(\d{1,2})\b/gi, "pp$1");
+  // Normalize newlines and split into lines
+  const lines = rawText.replace(/\r/g, "").split("\n").map(l => cleanLine(l)).filter(Boolean);
 
-  // 3) find race distance (best-effort)
-  const detectedDistance = extractRaceDistance(t);
-  const callRow = findCallRow(detectedDistance);
+  // 1) Header extraction (everything before the "DATE TRK" header line)
+  let headerLines = [];
+  let bodyStartIndex = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const low = lines[i].toLowerCase();
+    if (low.includes("date trk") || low.includes("date  trk") || low.includes("date trk   dist")) {
+      bodyStartIndex = i + 1;
+      break;
+    }
+    headerLines.push(lines[i]);
+  }
 
-  // 4) split into horse blocks
-  const horseBlocks = splitIntoHorseBlocks(t);
-  const horses = horseBlocks.map(b => parseHorseBlock(b));
+  const headerText = headerLines.join(" ");
+  // Name: look for "ppN   <Name>" pattern or first token up to "Own:" or '('
+  let name = null;
+  const nameMatch = headerText.match(/^pp\d+\s+(.+?)(?:\s+Own:|\s+\(|\s+Sire:|\s+Trnr:|$)/i);
+  if (nameMatch) name = nameMatch[1].trim();
+  else {
+    // fallback: first capitalized phrase
+    const m2 = headerText.match(/^[A-Z][A-Za-z'\-\. ]{2,40}/);
+    if (m2) name = m2[0].trim();
+  }
 
-  // 5) Build the RACE_DATA object
-  const RACE_DATA = {
-    rawText: pdfRawText,
-    cleanedText: t,
-    detectedDistance: detectedDistance,
-    callRow: callRow,
-    horses: horses
+  // Jockey: uppercase name immediately followed by "(" with starts like "(21 0-1-4 0%)"
+  let jockey = null;
+  const jMatch = headerText.match(/([A-Z][A-Z\s'\-\.]{2,80}?)\s*\(\d{1,3}\s/);
+  if (jMatch) {
+    // ensure not to pick SIRE or other ALL CAPS: check it contains two words (first + last)
+    const candidate = jMatch[1].trim();
+    if ((candidate.split(/\s+/).length >= 2) && candidate.length < 40) jockey = candidate;
+  } else {
+    // alternate: find pattern like " JOCKEYNAME (21 0-1-4"
+    const j2 = headerText.match(/([A-Z][A-Z\s]+\b)\s*\(\d/);
+    if (j2) jockey = j2[1].trim();
+  }
+
+  // Trainer: "Trnr:   Name"
+  let trainer = null;
+  const trn = headerText.match(/Trnr:\s*([^,]+?)(?:\s+\(|\s+Prime|\s+Life|$)/i);
+  if (trn) trainer = trn[1].trim();
+
+  // Basic header object
+  const header = {
+    name: name || null,
+    jockey: jockey || null,
+    trainer: trainer || null,
+    raw: headerText
   };
 
-  // store globally so analyzer can use it
-  window.RACE_DATA = RACE_DATA;
-  console.log("parser: built RACE_DATA:", {
-    distance: detectedDistance,
-    callRowName: callRow ? callRow.dist : null,
-    horsesCount: horses.length
+  // 2) Body: collect lines after "DATE TRK" header that are actual PP rows.
+  const bodyLines = lines.slice(bodyStartIndex);
+
+  // Heuristic: a PP row is a line (or two lines combined) that contains at least one time token like ":22" or "1:35"
+  const ppRows = [];
+  for (let i = 0; i < bodyLines.length; i++) {
+    const L = bodyLines[i];
+    // Some rows break to next line for comments or workouts - we'll look ahead a bit.
+    const combined = [L, bodyLines[i+1] || "", bodyLines[i+2] || ""].join(" ");
+    const times = extractTimesFromString(combined);
+    if (times.length >= 1) {
+      // Likely a PP row. We'll capture the single-line (if it contains the four call times) or combined
+      // Consolidate until we hit the next line that looks like a date or a blank.
+      let rowText = L;
+      let j = i + 1;
+      // If next line contains a workout line like "31Oct SA 5f ft 1:00« H 6/13" that's also a PP/extra; include if it has times
+      while (j < bodyLines.length && extractTimesFromString(bodyLines[j]).length > 0 && /[A-Za-z]/.test(bodyLines[j])) {
+        rowText += " " + bodyLines[j];
+        j++;
+      }
+      ppRows.push(rowText.trim());
+      // advance i to j-1
+      i = j - 1;
+    }
+  }
+
+  // 3) For each pp row, parse tokens. We expect tokens like:
+  // "03Oct25SA   à 1m fm   :22   :46 1:11 1:35   ...  HernandezJJ  2.80  Comment"
+  const pastPerformances = ppRows.map(rawRow => {
+    const row = cleanLine(rawRow);
+
+    // Split by 2+ spaces (column separators) — many PDF extractions have double-space between columns
+    let tokens = row.split(/\s{2,}/).map(t => t.trim()).filter(Boolean);
+    if (tokens.length === 1) {
+      // fallback: split by single spaces (conservative)
+      tokens = row.split(/\s+/).map(t => t.trim()).filter(Boolean);
+    }
+
+    // Try to find date/token that looks like "03Oct25SA" or "11Oct25SA"
+    let dateToken = null, trackToken = null, distToken = null, surfaceToken = null;
+    // Search tokens left-to-right for a token containing month letters and digits
+    for (let k = 0; k < Math.min(tokens.length, 4); k++) {
+      if (/[A-Za-z]{3}\d{2}/.test(tokens[k]) || /^\d{1,2}[A-Za-z]{3}\d{2}/.test(tokens[k])) {
+        dateToken = tokens[k];
+        // try next token(s) for track+distance/surface
+        if (tokens[k+1]) {
+          // combined example "SA   à 1m fm" -> may require splitting by single space
+          const extra = tokens[k+1].split(/\s+/);
+          if (extra.length >= 2) {
+            trackToken = extra[0];
+            distToken = extra[1];
+            if (extra.length >= 3) surfaceToken = extra[2];
+          } else {
+            // maybe tokens[k+2] exists
+            trackToken = tokens[k+1] || null;
+            distToken = tokens[k+2] || null;
+            surfaceToken = tokens[k+3] || null;
+          }
+        }
+        break;
+      }
+    }
+
+    // Extract time tokens from the row in sequence — assume first four time tokens are 1c,2c,str,fin (approx)
+    const allTimes = extractTimesFromString(row);
+    const firstCall = allTimes[0] || null;
+    const secondCall = allTimes[1] || null;
+    const stretchCall = allTimes[2] || null;
+    const finishCall = allTimes[3] || null;
+
+    // Jockey: try to find a token that has mixed-case or is last uppercase before odds (heuristic)
+    let jockeyName = null;
+    // Find token that looks like a capitalized name followed by digits or odds
+    const jockeyMatch = row.match(/([A-Z][A-Za-z'\-\. ]{2,40})\s+(?:\d+\.\d{1,2}|\d{1,2}\.\d)/);
+    if (jockeyMatch) jockeyName = jockeyMatch[1].trim();
+    else {
+      // alternate: find common short uppercase juggling "HernandezJJ" style
+      const jm = row.match(/\b([A-Z][a-z]+[A-Z]{1,3})\b/);
+      if (jm) jockeyName = jm[1];
+    }
+
+    // Odds: try last numeric token like 2.80 or 29.50 etc.
+    const oddsMatch = row.match(/(\d{1,2}\.\d{1,2})\b(?!:)/);
+    const odds = oddsMatch ? oddsMatch[1] : null;
+
+    // Compose parsed object
+    return {
+      raw: row,
+      dateRaw: dateToken,
+      track: trackToken,
+      distanceRaw: distToken,
+      surface: surfaceToken,
+      callsRaw: {
+        first: firstCall,
+        second: secondCall,
+        stretch: stretchCall,
+        finish: finishCall
+      },
+      callsSec: {
+        first: toSeconds(firstCall),
+        second: toSeconds(secondCall),
+        stretch: toSeconds(stretchCall),
+        finish: toSeconds(finishCall)
+      },
+      jockey: jockeyName,
+      odds: odds
+    };
   });
 
-  return RACE_DATA;
+  return {
+    header,
+    pastPerformances
+  };
 }
 
-// convenience for analyzer: if you previously stored extracted text at window._pdfText
-function runParserOnExtractedText() {
-  const txt = window._pdfText || "";
-  if (!txt) {
-    console.warn("parser.runParserOnExtractedText: no text found at window._pdfText");
-    return null;
-  }
-  return parsePdfText(txt);
-}
-
-// expose functions
-window.parser = {
-  parsePdfText,
-  runParserOnExtractedText,
-  normalizeDistForLookup,
-  findCallRow,
-  splitIntoHorseBlocks,
-  parseHorseBlock
-};
-
-// ready
-console.log("parser.js ready");
+/////////////////////
+// Example usage
+/////////////////////
+// const parsed = parsePPBlock(yourRawText);
+// console.log(JSON.stringify(parsed, null, 2));
