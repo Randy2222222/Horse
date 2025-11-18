@@ -40,11 +40,11 @@
 
   <!-- Your JS Files -->
   <script src="js/pdfReader.js"></script>
-  <!-- adding convert pdf to text script -->
+  <!-- adding convert pdf to text script white_space-->
   <script>
 document.getElementById("showText").addEventListener("click", () => {
   const win = window.open("", "_blank");
-  win.document.write("<pre style='white-space: pre-wrap; font-size: 12px;'>"
+  win.document.write("<pre style='black: pre-wrap; font-size: 12px green;'>"
     + (window._pdfReader.pdfText || "NO TEXT LOADED")
     + "</pre>");
   win.document.close();
