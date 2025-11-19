@@ -110,14 +110,42 @@ if (window.parsePPTable) {
     console.log("pdfReader: listener attached to #pdfFile");
   }
 
-  // Attach runAnalysis to check for loaded PDF (optional helper)
-  function attachRunButton() {
-    const runBtn = document.getElementById("runAnalysis");
-    if (!runBtn) return;
-    runBtn.removeEventListener("click", runCheck);
-    runBtn.addEventListener("click", runCheck);
+  // Attach runAnalysis to check for loaded PDF (optional helper) 
+ // commenting out next 5 lines then adding new code up till: function runcheck () { 
+  // function attachRunButton() {
+  //  const runBtn = document.getElementById("runAnalysis");
+  // if (!runBtn) return;
+  // runBtn.removeEventListener("click", runCheck);
+  // runBtn.addEventListener("click", runCheck); 
+ // }
+
+ // New code added function runCreate()
+ function runCreate() {
+  if (!window._pdfReader.pdfDoc) {
+    alert("No PDF loaded. Please upload a Brisnet PDF first.");
+    return;
   }
 
+  // 🔹 At this point the PDF is loaded AND parsed.
+  // window._pdfReader.parsedPP contains the parsed bottom-section rows.
+  // Next step is to output or build your form.
+
+  const pp = window._pdfReader.parsedPP;
+
+  if (!pp || !pp.length) {
+    alert("Parsing failed — no PP data found.");
+    return;
+  }
+
+  // For now, just display the JSON in #output
+  const out = document.getElementById("output");
+  out.textContent = JSON.stringify(pp, null, 2);
+
+  console.log("CREATE OK — PP Parsed:", pp);
+}
+
+ // End new code added funtion runCreat()
+ 
   function runCheck() {
     if (!window._pdfReader.pdfDoc) {
       alert("No PDF loaded. Please upload a Brisnet PDF first.");
