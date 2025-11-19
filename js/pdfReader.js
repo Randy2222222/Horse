@@ -111,19 +111,48 @@ if (window.parsePPTable) {
   }
 
   // Attach runAnalysis to check for loaded PDF (optional helper) 
-  function attachRunButton() {
-    const runBtn = document.getElementById("runAnalysis");
-    if (!runBtn) return;
-    runBtn.removeEventListener("click", runCheck);
-    runBtn.addEventListener("click", runCheck); 
+ // Comment out next 2 funtions
+  //function attachRunButton() {
+   //const runBtn = document.getElementById("runAnalysis");
+    //if (!runBtn) return;
+   // runBtn.removeEventListener("click", runCheck);
+   // runBtn.addEventListener("click", runCheck); 
+  //}
+ 
+  //function runCheck() {
+  //if (!window._pdfReader.pdfDoc) {
+  // alert("No PDF loaded. Please upload a Brisnet PDF first.");
+      //return;
+    //}
+ // Now add new code till comment: Quick confirm
+ function attachRunButton() {
+  const runBtn = document.getElementById("runAnalysis");
+  if (!runBtn) return;
+  runBtn.removeEventListener("click", runCreate);
+  runBtn.addEventListener("click", runCreate);
+}
+ 
+ function runCreate() {
+  if (!window._pdfReader.pdfDoc) {
+    alert("No PDF loaded. Please upload a Brisnet PDF first.");
+    return;
   }
- 
-  function runCheck() {
-   if (!window._pdfReader.pdfDoc) {
-   alert("No PDF loaded. Please upload a Brisnet PDF first.");
-      return;
-    }
- 
+
+  // 🔹 At this point the PDF is loaded AND Parsed
+
+  const pp = window._pdfReader.parsedPP;
+
+  if (!pp || !pp.length) {
+    alert("Parsing failed — no PP data found.");
+    return;
+  }
+
+  // For now, just display the JSON in #output
+  const out = document.getElementById("output");
+  out.textContent = JSON.stringify(pp, null, 2);
+
+  console.log("CREATE OK — PP Parsed:", pp);
+}
     // Quick confirm (you can replace this with your analyzer entrypoint)
     alert("PDF loaded. Pages: " + window._pdfReader.pdfDoc.numPages + "\nExtracted text length: " + window._pdfReader.pdfText.length);
   }
