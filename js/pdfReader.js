@@ -1,6 +1,5 @@
 // js/pdfReader.js
 // iPad-friendly FileReader-based PDF loader for pdf.js
-// Requires <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.min.js"></script> in <head>
 
 (function () {
  // find pdfjs global
@@ -12,13 +11,6 @@ if (!pdfjsLib) {
   if (st) st.textContent = "ERROR: pdf.js not loaded.";
    return;
    }
-
-   //set worker (must set before getDocument in some environments)
-   //if (pdfjsLib.GlobalWorkerOptions) {
-  // pdfjsLib.GlobalWorkerOptions.workerSrc =
-   //"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.142/pdf.worker.min.js";
-
-//  }
 
   // Shared state exported to window so analyzer can access if needed
   window._pdfReader = {
@@ -51,7 +43,7 @@ if (!pdfjsLib) {
       window._pdfReader.pdfText = fullText;
       updateStatus(`PDF loaded successfully (${pdf.numPages} pages)`);
 
-     // Parse bottom section (optional for now) put this code in till line 63
+     // Parse bottom section (optional for now) put this code in till line 55
 if (window.parsePPTable) {
     try {
         const parsed = window.parsePPTable(fullText);
