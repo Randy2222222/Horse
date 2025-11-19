@@ -127,6 +127,7 @@ if (window.parsePPTable) {
  // Quick confirm (you can replace this with your analyzer entrypoint)
  // alert("PDF loaded. Pages: " + window._pdfReader.pdfDoc.numPages + "\nExtracted text length: " + 
  // }
+ 
  // Now add new code till comment: Attach on Dom
  function attachRunButton() {
   const runBtn = document.getElementById("runAnalysis");
