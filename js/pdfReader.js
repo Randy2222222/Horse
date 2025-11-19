@@ -124,7 +124,10 @@ if (window.parsePPTable) {
   // alert("No PDF loaded. Please upload a Brisnet PDF first.");
       //return;
     //}
- // Now add new code till comment: Quick confirm
+ // Quick confirm (you can replace this with your analyzer entrypoint)
+ // alert("PDF loaded. Pages: " + window._pdfReader.pdfDoc.numPages + "\nExtracted text length: " + 
+ // }
+ // Now add new code till comment: Attach on Dom
  function attachRunButton() {
   const runBtn = document.getElementById("runAnalysis");
   if (!runBtn) return;
@@ -153,11 +156,8 @@ if (window.parsePPTable) {
 
   console.log("CREATE OK — PP Parsed:", pp);
 }
-    // Quick confirm (you can replace this with your analyzer entrypoint)
-    alert("PDF loaded. Pages: " + window._pdfReader.pdfDoc.numPages + "\nExtracted text length: " + window._pdfReader.pdfText.length);
-  }
-
-  // Attach on DOM ready (non-blocking)
+    
+ // Attach on DOM ready (non-blocking)
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
       attachListener();
