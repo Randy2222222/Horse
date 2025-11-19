@@ -1,62 +1,92 @@
 // js/parser.js
 // -----------------------------------------------------------
-// Brisnet Past Performance Parser (Bottom Section Only)
-// Uses unbroken date+track token as the anchor
-// Extracts: date, track, dist, racetype, pp, st, 1c, 2c, str, fin,
-// jockey, odds, topFinishers, comment, fld
+// Brisnet Past Performance Parser — Using POST POSITION as anchor
 // -----------------------------------------------------------
 
-function parsePPTable(text) {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+function parsePPTable(rawText) {
 
-  // Detects start token like "09Oct25Baq1"
-  const startTokenRe = /^([1-9]|1[0-9]|20)\b/;
+  // -------------------------------------------------------
+  // 1. PRE-FORMAT THE TEXT TO CREATE REAL LINES
+  // -------------------------------------------------------
+  // Insert newline before any " PP HorseName"
+  // Example: " 1 Scythian" → "\n1 Scythian"
+  rawText = rawText.replace(/(\s)([1-9]|1[0-9]|20)(\s+[A-Z])/g, "\n$2$3");
+
+  // Convert into lines
+  const lines = rawText
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
+  // -------------------------------------------------------
+  // 2. POST POSITION TOKEN (1–20)
+  // -------------------------------------------------------
+  const ppTokenRe = /^([1-9]|1[0-9]|20)\b/;
 
   const results = [];
 
+  // -------------------------------------------------------
+  // 3. PROCESS EACH LINE: FIND A NEW HORSE & PARSE PAST PERFS
+  // -------------------------------------------------------
   for (let rawLine of lines) {
-    // skip header
+
+    // Skip DATE/TRK headers or separators
     if (/^DATE\s+TRK/i.test(rawLine) || /^-+$/.test(rawLine)) continue;
 
-    const startMatch = rawLine.match(startTokenRe);
-    if (!startMatch) continue;
+    // Must start with a post position
+    const m = rawLine.match(ppTokenRe);
+    if (!m) continue;
 
-    const tokenEnd = startMatch[0].length;
-    const date = startMatch[1];
-    const track = startMatch[2];
-    const gluedNumber = startMatch[3] || null; // rare, but valid
+    const postPosition = m[1];
+    let rest = rawLine.slice(m[0].length).trim();
 
-    let rest = rawLine.slice(tokenEnd).trim();
+    // ---------------------------------------------------
+    // NOTE: At this point, "rest" starts with:
+    //   HorseName (RunningStyle #) Owners: ...
+    //   Jockey: ...
+    //   Then the past performances further below
+    //
+    // But since text extraction merges all lines, the 
+    // PP rows (DATE, TRK, DIST, TYPE, PP, ST, 1C...) 
+    // ALSO appear in the text. We catch ONLY those.
+    // ---------------------------------------------------
 
-    // DIST field (contains unicode fractions sometimes)
+    // A single PP row begins with a date like 09Oct25
+    const dateTrackRe = /^(\d{2}[A-Za-z]{3}\d{2})\s*([A-Za-z]{3})/;
+    if (!dateTrackRe.test(rest)) {
+      continue; // Not a PP-line, skip
+    }
+
+    // Extract date + track
+    const dt = rest.match(dateTrackRe);
+    const date = dt[1];
+    const track = dt[2];
+    rest = rest.slice(dt[0].length).trim();
+
+    // DISTANCE (unicode fractions included)
     const distMatch = rest.match(/^(\d+[^\s]*)\s*/);
     const dist = distMatch ? distMatch[1] : null;
     if (distMatch) rest = rest.slice(distMatch[0].length);
 
-    // RACETYPE until PP (first standalone number)
-    const nextNumMatch = rest.match(/\b(\d{1,2})\b/);
+    // RACETYPE until PP (1–20)
+    const nextNum = rest.match(/\b(\d{1,2})\b/);
     let racetype = null;
-    let pp = null;
+    let innerPP = null;
 
-    if (nextNumMatch) {
-      const idx = nextNumMatch.index;
+    if (nextNum) {
+      const idx = nextNum.index;
       racetype = rest.slice(0, idx).trim() || null;
-      pp = nextNumMatch[1];
-      rest = rest.slice(idx + nextNumMatch[0].length).trim();
-    } else {
-      // fallback
-      const fw = rest.split(/\s+/)[0];
-      racetype = fw;
-      rest = rest.slice(fw.length).trim();
+      innerPP = nextNum[1];
+      rest = rest.slice(idx + nextNum[0].length).trim();
     }
 
-    // ST, 1C, 2C, STR, FIN (5 call fields)
+    // ST, 1C, 2C, STR, FIN
     const calls = [];
-    while (calls.length < 5 && rest.length) {
-      const m = rest.match(/^\s*(\d{1,2}[^\s]*)\s*/);
-      if (!m) break;
-      calls.push(m[1]);
-      rest = rest.slice(m[0].length);
+    while (calls.length < 5) {
+      const c = rest.match(/^\s*(\d{1,2}[^\s]*)\s*/);
+      if (!c) break;
+      calls.push(c[1]);
+      rest = rest.slice(c[0].length);
     }
 
     const st  = calls[0] || null;
@@ -73,56 +103,43 @@ function parsePPTable(text) {
     if (oddsMatch) {
       odds = oddsMatch[1];
       const beforeOdds = rest.slice(0, oddsMatch.index).trim();
-      jockey = beforeOdds.split(/\s+/).slice(-1)[0] || beforeOdds || null;
+      jockey = beforeOdds.split(/\s+/).slice(-1)[0] || null;
       rest = rest.slice(oddsMatch.index + oddsMatch[0].length).trim();
-    } else {
-      const jk = rest.split(/\s+/)[0];
-      jockey = jk || null;
-      rest = rest.slice((jk||'').length).trim();
     }
 
-    // FLD (field size, final number)
+    // FLD (field size)
     const fldMatch = rest.match(/(\d{1,2})\s*$/);
-    let fld = null;
-    if (fldMatch) {
-      fld = fldMatch[1];
-      rest = rest.slice(0, fldMatch.index).trim();
-    }
+    const fld = fldMatch ? fldMatch[1] : null;
 
     // TOP FINISHERS + COMMENT
     let topFinishers = null;
     let comment = null;
 
-    const sepMatch = rest.match(/(.+?)\s{2,}(.+)$/);
-    if (sepMatch) {
-      topFinishers = sepMatch[1].trim();
-      comment = sepMatch[2].trim();
+    const sep = rest.match(/(.+?)\s{2,}(.+)$/);
+    if (sep) {
+      topFinishers = sep[1].trim();
+      comment = sep[2].trim();
     } else {
-      const commentIdx = rest.search(/(Ins;|Chck|Stumble|bpd|bpm|;)/i);
-      if (commentIdx >= 0) {
-        topFinishers = rest.slice(0, commentIdx).trim();
-        comment     = rest.slice(commentIdx).trim();
+      const idx = rest.search(/(Ins;|Chck|Stumble|bpd|bpm|;)/i);
+      if (idx >= 0) {
+        topFinishers = rest.slice(0, idx).trim();
+        comment = rest.slice(idx).trim();
       } else {
-        const parts = rest.split(/[-–—]/).map(s => s.trim()).filter(s => s.length);
-        if (parts.length >= 3) {
-          topFinishers = parts.slice(0,3).join('–');
-          comment      = rest.replace(topFinishers, '').trim();
-        } else {
-          topFinishers = rest.trim();
-          comment = '';
-        }
+        topFinishers = rest.trim();
+        comment = "";
       }
     }
 
-    // Save parsed row
-results.push({
-      horsePP: ppStart,
+    // -------------------------------------------------------
+    // SAVE RESULT
+    // -------------------------------------------------------
+    results.push({
+      pp: postPosition,
       date,
       track,
-      gluedNumber,
       dist,
       racetype,
-      pp,
+      innerPP,
       st,
       c1,
       c2,
@@ -133,17 +150,13 @@ results.push({
       topFinishers,
       comment,
       fld
-});
-
+    });
   }
 
   return results;
 }
 
-// OPTIONAL export for module use
+// Export for browser
 if (typeof window !== "undefined") {
   window.parsePPTable = parsePPTable;
-}
-if (typeof module !== "undefined") {
-  module.exports = { parsePPTable };
 }
