@@ -118,7 +118,12 @@ if (window.parsePPTable) {
   // runBtn.removeEventListener("click", runCheck);
   // runBtn.addEventListener("click", runCheck); 
  // }
-
+function attachRunButton() {
+  const runBtn = document.getElementById("runAnalysis");
+  if (!runBtn) return;
+  runBtn.removeEventListener("click", runCreate);
+  runBtn.addEventListener("click", runCreate);
+}
  // New code added function runCreate()
  function runCreate() {
   if (!window._pdfReader.pdfDoc) {
@@ -145,12 +150,12 @@ if (window.parsePPTable) {
 }
 
  // End new code added funtion runCreat()
- 
-  function runCheck() {
-    if (!window._pdfReader.pdfDoc) {
-      alert("No PDF loaded. Please upload a Brisnet PDF first.");
-      return;
-    }
+ // remove run check ()
+ // function runCheck() {
+ //  if (!window._pdfReader.pdfDoc) {
+ //  alert("No PDF loaded. Please upload a Brisnet PDF first.");
+ //     return;
+ //   }
     // Quick confirm (you can replace this with your analyzer entrypoint)
     alert("PDF loaded. Pages: " + window._pdfReader.pdfDoc.numPages + "\nExtracted text length: " + window._pdfReader.pdfText.length);
   }
