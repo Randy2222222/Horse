@@ -10,7 +10,7 @@ function parsePPTable(text) {
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
   // Detects start token like "09Oct25Baq1"
-  const startTokenRe = /^(\d{2}[A-Za-z]{3}\d{2})([A-Za-z]{3})(\d{1,2})?/;
+  const startTokenRe = /^([1-9]|1[0-9]|20)\b/;
 
   const results = [];
 
@@ -115,7 +115,8 @@ function parsePPTable(text) {
     }
 
     // Save parsed row
-    results.push({
+results.push({
+      horsePP: ppStart,
       date,
       track,
       gluedNumber,
@@ -132,7 +133,8 @@ function parsePPTable(text) {
       topFinishers,
       comment,
       fld
-    });
+});
+
   }
 
   return results;
