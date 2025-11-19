@@ -50,6 +50,18 @@ if (!pdfjsLib) {
 
       window._pdfReader.pdfText = fullText;
       updateStatus(`PDF loaded successfully (${pdf.numPages} pages)`);
+
+     // Parse bottom section (optional for now) put this code in till line 63
+if (window.parsePPTable) {
+    try {
+        const parsed = window.parsePPTable(fullText);
+        window._pdfReader.parsedPP = parsed;
+        console.log("Parsed PP:", parsed);
+    } catch(err) {
+        console.error("Parser error:", err);
+    }
+}
+     // end of code added
       window._pdfReader.lastError = null;
       console.log("pdfReader: PDF text length:", fullText.length);
       return true;
