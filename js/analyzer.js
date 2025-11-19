@@ -7,7 +7,7 @@
 console.log("analyzer.js: clean analyzer loaded");
 
 // ---------------- CONFIG ----------------
-const PDF_URL = "https://raw.githubusercontent.com/Randy2222222/Horse/main/bw_pdf_viewer.php.pdf";
+//const PDF_URL = "https://raw.githubusercontent.com/Randy2222222/Horse/main/bw_pdf_viewer.php.pdf";
 
 // small length tokens mapping
 const LENGTH_TOKEN_MAP = {
