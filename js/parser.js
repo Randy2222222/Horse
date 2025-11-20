@@ -1,68 +1,86 @@
 // js/parser.js
-// ------------------------------------------------------------
-// ULTRA-SAFE BRISNET HORSE BLOCK PARSER
-// No race header parsing, no PP table parsing.
-// Only splits the PDF text into correct HORSE blocks.
-// ------------------------------------------------------------
+// Simple Brisnet horse-block splitter (post-position anchor)
+// NOW ALSO removes everything before the first true horse (post + name + "(")
 
 (function () {
+  'use strict';
 
-  // Detect horse header:  <post> <name> (RUNSTYLE NUMBER)
-  // RUNSTYLE = E, P, S, EP, E/P
-  const HORSE_HEADER_RE =
-    /(?:^|\n)\s*([1-9]|1[0-9]|20)\s+([A-Za-z][A-Za-z0-9'’\- ]+?)\s*\((E\/P|EP|E|P|S)\s*\d\)/g;
+  function safeTrim(s) {
+    return (s || '')
+      .replace(/\u00A0/g, ' ')
+      .replace(/\r/g, '\n')
+      .replace(/\t/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 
-  // ------------------------------------------------------------
-  // Split into horse blocks
-  // ------------------------------------------------------------
-  function splitHorseBlocks(text) {
-    let match;
-    const found = [];
+  // Detect horse anchors:
+  // <post> <name> (
+  const HORSE_ANCHOR_RE = /(?:^|\n)\s*([1-9]|1[0-9]|20)\s+([^\(\n]{1,120}?)\s*\(/g;
 
-    while ((match = HORSE_HEADER_RE.exec(text)) !== null) {
-      const post = Number(match[1]);
-      const idx = match.index + (match[0].startsWith("\n") ? 1 : 0);
+  function findAnchors(text) {
+    const anchors = [];
+    let m;
+    while ((m = HORSE_ANCHOR_RE.exec(text)) !== null) {
+      const idx = m.index + (text[m.index] === '\n' ? 1 : 0);
+      anchors.push({
+        idx,
+        pp: Number(m[1]),
+        name: safeTrim(m[2])
+      });
+    }
+    return anchors;
+  }
 
-      found.push({ post, idx });
+  // Cut off the entire race header BEFORE the first horse
+  function stripRaceHeader(fullText) {
+    const anchors = findAnchors(fullText);
+    if (!anchors.length) return fullText; // no horses found
+
+    const firstIdx = anchors[0].idx;
+    return fullText.slice(firstIdx); // everything before first horse gone
+  }
+
+  function splitBlocks(text) {
+    const anchors = findAnchors(text);
+    const blocks = [];
+
+    if (!anchors.length) {
+      return [{ horsePP: null, name: null, raw: safeTrim(text), header: null }];
     }
 
-    if (found.length === 0) return [];
-
-    const blocks = [];
-    for (let i = 0; i < found.length; i++) {
-      const start = found[i].idx;
-      const end = (i + 1 < found.length) ? found[i + 1].idx : text.length;
+    for (let i = 0; i < anchors.length; i++) {
+      const start = anchors[i].idx;
+      const end = (i + 1 < anchors.length) ? anchors[i + 1].idx : text.length;
+      const raw = safeTrim(text.slice(start, end));
 
       blocks.push({
-        post: found[i].post,
-        raw: text.slice(start, end).trim()
+        horsePP: anchors[i].pp,
+        name: anchors[i].name,
+        raw,
+        header: null   // header no longer used — we stripped it out
       });
     }
 
     return blocks;
   }
 
-  // ------------------------------------------------------------
-  // MAIN: return horse blocks only
-  // ------------------------------------------------------------
   function parsePPTable(text) {
-    if (!text) return [];
+    if (!text || !text.length) return [];
 
-    // Normalize NBSP (Brisnet PDFs always include these)
-    text = text.replace(/\u00A0/g, " ");
+    let normalized = text.replace(/\u00A0/g, ' ').replace(/\r/g, '\n');
 
-    const horses = splitHorseBlocks(text);
+    // 🔥 REMOVE RACE HEADER FIRST
+    normalized = stripRaceHeader(normalized);
 
-    // Only return horse blocks — no PP tables or row parsing yet
-    return horses;
+    // Split into horse blocks
+    return splitBlocks(normalized);
   }
 
-  // Export
-  if (typeof window !== "undefined") {
+  if (typeof window !== 'undefined') {
     window.parsePPTable = parsePPTable;
   }
-  if (typeof module !== "undefined") {
+  if (typeof module !== 'undefined') {
     module.exports = { parsePPTable };
   }
-
 })();
