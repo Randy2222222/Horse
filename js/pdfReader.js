@@ -43,6 +43,12 @@ if (!pdfjsLib) {
         fullText += pageText + "\n\n";
       }
 
+
+     // --- Insert missing newlines before Post Positions ---
+fullText = fullText.replace(/(\s)([1-9]|1[0-9]|20)\s+([A-Za-z])/g, "\n$2 $3");
+// --- Insert newline after the Post Time block ---
+fullText = fullText.replace(/Post Time:[^\n]+/g, m => m + "\n");
+     // --- added the 2 code lines above 4 lines including his comments
       window._pdfReader.pdfText = fullText;
       updateStatus(`PDF loaded successfully (${pdf.numPages} pages)`);
 
