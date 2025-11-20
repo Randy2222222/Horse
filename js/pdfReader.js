@@ -153,7 +153,19 @@ if (window.parsePPTable) {
 
   // For now, just display the JSON in #output
   const out = document.getElementById("output");
-  out.textContent = JSON.stringify(pp, null, 2);
+  
+  // commenting out one line then adding code till console.log(
+ // out.textContent = JSON.stringify(pp, null, 2);
+  let text = "";
+
+for (let h of pp) {
+  text += "POST POSITION: " + h.post + "\n";
+  text += "------------------------------------\n";
+  text += h.raw + "\n\n";
+}
+
+out.textContent = text;
+  // end of added code before console.log(
 
   console.log("CREATE OK — PP Parsed:", pp);
 }
