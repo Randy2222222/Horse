@@ -36,7 +36,10 @@ if (!pdfjsLib) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
         // defensively map strings
-        const pageText = content.items.map(it => it.str || "").join(" ");
+       
+       // replaced next line with line afer that
+        //const pageText = content.items.map(it => it.str || "").join(" ");
+       const pageText = content.items.map(it => it.str || "").join("\n");
         fullText += pageText + "\n\n";
       }
 
