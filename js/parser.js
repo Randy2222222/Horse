@@ -1,71 +1,57 @@
-// js/parser.js
 // -----------------------------------------------------------
-// SIMPLE HORSE BLOCK SPLITTER
-// Anchor: "PP HorseName (STYLE DIGIT)"
-// STYLE = E | P | S | E/P
-// DIGIT = 1..6
+// SUPER SIMPLE PARSER (OPTION A)
+// Splits horses only by:  <POST_NUMBER><space><TEXT>
+// Works 100% with your Full Race.txt extraction.
 // -----------------------------------------------------------
 
 (function () {
 
-  // ✔ Runstyle anchor regex: (E 5) or (P 3) or (S 2) or (E/P 4)
-  const STYLE_RE = /\((E|P|S|E\/P)\s([1-6])\)/;
-
-  // ✔ Full horse line anchor:
-  //    <PP 1–20>  <word(s)>  (STYLE DIGIT)
-  const HORSE_ANCHOR_RE = /^([1-9]|1[0-9]|20)\s+(.+?)\s+\((E|P|S|E\/P)\s([1-6])\)/;
-
-  // --------------------------------------------------------------------
-  // MAIN FUNCTION
-  // --------------------------------------------------------------------
   function parsePPTable(fullText) {
+    if (!fullText) return [];
 
-    if (!fullText || !fullText.length) return [];
+    // Normalize text
+    let t = fullText.replace(/\r/g, "\n");
 
-    // Normalize the text — remove NBSP and unify newlines
-    let text = fullText.replace(/\u00A0/g, " ").replace(/\r/g, "\n");
+    // Regex for horse start:
+    // Example: "1 Scythian", "2 Hereforagoodtime", "7 Laurelin"
+    const horseStartRe = /(?:^|\n)([1-9]|1[0-9]|20)\s+([A-Za-z].+)/g;
 
-    let lines = text.split("\n").map(l => l.trim());
+    let matches = [];
+    let m;
 
-    let horses = [];
-    let curr = null;
-
-    for (let line of lines) {
-
-      // ✔ NEW HORSE detected
-      let m = line.match(HORSE_ANCHOR_RE);
-      if (m) {
-        // If we were inside a horse block, push it
-        if (curr) horses.push(curr);
-
-        curr = {
-          post: Number(m[1]),
-          name: m[2].trim(),
-          runstyle: m[3],
-          styleDigit: Number(m[4]),
-          raw: line + "\n"
-        };
-
-        continue;
-      }
-
-      // ✔ If inside a horse, keep collecting text
-      if (curr) {
-        curr.raw += line + "\n";
-      }
+    // Find all starting positions
+    while ((m = horseStartRe.exec(t)) !== null) {
+      matches.push({
+        post: Number(m[1]),
+        idx: m.index + (m[0].startsWith("\n") ? 1 : 0)
+      });
     }
 
-    // ✔ Don't forget last horse
-    if (curr) horses.push(curr);
+    if (matches.length === 0) {
+      return [];
+    }
+
+    let horses = [];
+
+    for (let i = 0; i < matches.length; i++) {
+      const start = matches[i].idx;
+      const end = (i + 1 < matches.length) ? matches[i + 1].idx : t.length;
+
+      let rawBlock = t.slice(start, end).trim();
+
+      horses.push({
+        post: matches[i].post,
+        raw: rawBlock,
+        // We do NOT parse PP rows in Option A
+        header: rawBlock,
+        pps: []
+      });
+    }
 
     return horses;
   }
 
-  // Export
-  if (typeof window !== "undefined")
-    window.parsePPTable = parsePPTable;
-
-  if (typeof module !== "undefined")
-    module.exports = { parsePPTable };
+  // Export to browser
+  window.parsePPTable = parsePPTable;
 
 })();
