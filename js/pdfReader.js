@@ -42,16 +42,8 @@ if (!pdfjsLib) {
        const pageText = content.items.map(it => it.str || "").join("\n");
         fullText += pageText + "\n\n";
       }
-
-
-     
-     // --- Insert missing newlines before Post Positions (including unicode symbols) ---
-    // fullText = fullText.replace(/\b([1-9]|1[0-9]|20)[^\r\nA-Za-z0-9]+([A-Za-z])/g, "\n$1 $2");
-     // --- Insert newline after the Post Time block ---
-    // fullText = fullText.replace(/Post Time:[^\n]+/g, m => m + "\n");
-     // --- added the 2 code lines above 4 lines including his comments
-      window._pdfReader.pdfText = fullText;
-      updateStatus(`PDF loaded successfully (${pdf.numPages} pages)`);
+        window._pdfReader.pdfText = fullText;
+        updateStatus(`PDF loaded successfully (${pdf.numPages} pages)`);
 
      // Parse bottom section (optional for now) put this code in till line 55
 if (window.parsePPTable) {
