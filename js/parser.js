@@ -122,6 +122,22 @@
   // 5) Main parser
   // -----------------------------------------------------------
   function parsePPTable(fullText) {
+    // -----------------------------------------------------------
+// REMOVE TOP SUMMARY TABLES (Speed Last Race, Prime Power, 
+// Class Rating, Best Speed at Dist, Race Description, Post Time)
+// We keep only starting from the FIRST REAL HORSE:
+// Format: "1 Scythian (P 5)" or "7 Laurelin (EP 4)"
+// -----------------------------------------------------------
+const horseStartRe = /(?:^|\n)([1-9]|1[0-9]|20)\s+[A-Za-z’'.-]+\s+\([A-Z]{1,2}\s*\d+\)/;
+
+const realStart = text.search(horseStartRe);
+if (realStart === -1) {
+    console.warn("No real horse block found — cannot parse race.");
+    return [];
+}
+
+// Trim EVERYTHING above first valid horse
+text = text.slice(realStart);
 
     if (!fullText || !fullText.length) return [];
 
