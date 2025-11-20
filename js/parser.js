@@ -1,85 +1,58 @@
 // js/parser.js
-// SIMPLE Brisnet horse-block splitter using only:
-// POST#  +  name  + "("
-// with race header removed.
+// Clean and simple: split horses using "<pp> <name> (" pattern
 
 (function () {
   'use strict';
 
-  function safeTrim(s) {
-    return (s || '')
-      .replace(/\u00A0/g, ' ')
-      .replace(/\r/g, '\n')
-      .replace(/[ \t]+/g, ' ')
-      .trim();
-  }
+  // Main horse anchor:
+  //  - post position = 1–20
+  //  - 1–3 spaces
+  //  - horse name (letters, spaces, / and ’ allowed)
+  //  - "(" immediately after name block
+  const HORSE_RE = /(?:^|\n)([1-9]|1[0-9]|20)\s{1,3}([A-Za-z0-9\/'’.\-\s]+?)\s*\(/g;
 
-  // SIMPLE anchor:
-  // <post>  <anything>  "("
-  const HORSE_ANCHOR_RE = /(?:^|\n)\s*([1-9]|1[0-9]|20)\s+(.{1,80}?)\s*\(/g;
+  function parsePPTable(text) {
+    if (!text) return [];
 
-  function findAnchors(text) {
-    const anchors = [];
-    let m;
+    // Ensure consistent newlines
+    let t = text.replace(/\r/g, "\n");
 
-    while ((m = HORSE_ANCHOR_RE.exec(text)) !== null) {
-      const idx = m.index + (text[m.index] === '\n' ? 1 : 0);
-      anchors.push({
-        idx,
-        pp: Number(m[1]),
-        name: safeTrim(m[2])
+    // Find all horses
+    let horses = [];
+    let match;
+
+    while ((match = HORSE_RE.exec(t)) !== null) {
+      horses.push({
+        idx: match.index,
+        post: Number(match[1]),
+        name: match[2].trim()
       });
     }
-    return anchors;
-  }
 
-  // Remove race header by cutting everything before first horse
-  function stripRaceHeader(fullText) {
-    const anchors = findAnchors(fullText);
-    if (!anchors.length) return fullText;
-    return fullText.slice(anchors[0].idx);
-  }
-
-  function splitBlocks(text) {
-    const anchors = findAnchors(text);
-    const blocks = [];
-
-    if (!anchors.length) {
-      return [{ horsePP: null, name: null, raw: safeTrim(text), header: null }];
+    if (!horses.length) {
+      console.warn("NO HORSE ANCHORS FOUND");
+      return [];
     }
 
-    for (let i = 0; i < anchors.length; i++) {
-      const start = anchors[i].idx;
-      const end = (i + 1 < anchors.length) ? anchors[i + 1].idx : text.length;
-      const raw = safeTrim(text.slice(start, end));
+    // Now cut blocks
+    let blocks = [];
+
+    for (let i = 0; i < horses.length; i++) {
+      const start = horses[i].idx;
+      const end = (i + 1 < horses.length) ? horses[i + 1].idx : t.length;
+      const slice = t.slice(start, end).trim();
 
       blocks.push({
-        horsePP: anchors[i].pp,
-        name: anchors[i].name,
-        raw: raw,
-        header: null
+        post: horses[i].post,
+        name: horses[i].name,
+        raw: slice
       });
     }
 
     return blocks;
   }
 
-  function parsePPTable(text) {
-    if (!text) return [];
-
-    // Normalize minimal stuff
-    let t = text.replace(/\u00A0/g, ' ')
-                .replace(/\r/g, '\n');
-
-    // Remove header
-    t = stripRaceHeader(t);
-
-    // Split into horses
-    return splitBlocks(t);
-  }
-
-  if (typeof window !== 'undefined') {
-    window.parsePPTable = parsePPTable;
-  }
+  // Export
+  window.parsePPTable = parsePPTable;
 
 })();
