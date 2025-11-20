@@ -147,7 +147,9 @@ if (window.parsePPTable) {
   let text = "";
 
 for (let h of pp) {
-  text += "POST POSITION: " + h.post + "\n";
+ // Replaced line below to change: h.post to h.horsePP
+  text += "POST POSITION: " + h.horsePP + "\n"; 
+// text += "POST POSITION: " + h.post + "\n";
   text += "------------------------------------\n";
   text += h.raw + "\n\n";
 }
