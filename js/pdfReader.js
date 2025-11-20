@@ -111,26 +111,11 @@ if (window.parsePPTable) {
     input.addEventListener("change", handleFileInputChange);
     console.log("pdfReader: listener attached to #pdfFile");
   }
-
-  // Attach runAnalysis to check for loaded PDF (optional helper) 
- // Comment out next 2 funtions
-  //function attachRunButton() {
-   //const runBtn = document.getElementById("runAnalysis");
-    //if (!runBtn) return;
-   // runBtn.removeEventListener("click", runCheck);
-   // runBtn.addEventListener("click", runCheck); 
-  //}
- 
-  //function runCheck() {
-  //if (!window._pdfReader.pdfDoc) {
-  // alert("No PDF loaded. Please upload a Brisnet PDF first.");
-      //return;
-    //}
  // Quick confirm (you can replace this with your analyzer entrypoint)
  // alert("PDF loaded. Pages: " + window._pdfReader.pdfDoc.numPages + "\nExtracted text length: " + 
  // }
  
- // Now add new code till comment: Attach on Dom
+ // Attach Button Create and Funtion to Run it
  function attachRunButton() {
   const runBtn = document.getElementById("runAnalysis");
   if (!runBtn) return;
@@ -145,6 +130,7 @@ if (window.parsePPTable) {
   }
 
   // 🔹 At this point the PDF is loaded AND Parsed
+  // Insert new code till: Attach on Dom comment
 
   const pp = window._pdfReader.parsedPP;
 
@@ -167,8 +153,6 @@ for (let h of pp) {
 }
 
 out.textContent = text;
-  // end of added code before console.log(
-
   console.log("CREATE OK — PP Parsed:", pp);
 }
     
