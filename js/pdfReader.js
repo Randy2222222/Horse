@@ -64,7 +64,7 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
             return {
                 post: h.post,
                 name: h.name,
-                ...window.parseHorseBlockFull(h)   // <-- sends the full block to the parser
+                ...window.parseHorseBlockFull(h.raw)   // <-- sends the full block to the parser
             };
         });
 
