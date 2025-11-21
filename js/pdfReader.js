@@ -60,21 +60,21 @@ if (window.parsePPTable) {
      // Run full per-horse parsing using horseParser.js
 
  if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
-   try {
-      window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
-          return {
-              post: h.post,
-              name: h.name,
-                 ...window.parseHorseBlockFull(h.raw)   // <-- sends the full block to the parser
-          };
-       });
-
-       console.log("Full Horse Parse:", window._pdfReader.horses);
-
-    } catch(err) {
-      console.error("Full horse parse error:", err);
-    }
- }
+  try {
+    window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
+      // parsedPP items must include the raw block in h.raw (parsePPTable should keep raw)
+      // if parsedPP gives only minimal data, we still try to pass the whole object; parser has fallbacks
+      return {
+        post: h.post || null,
+        name: h.name || null,
+        ...window.parseHorseBlockFull(h.raw || h)
+      };
+    });
+    console.log("Full Horse Parse:", window._pdfReader.horses);
+  } catch (err) {
+    console.error("Full horse parse error:", err);
+  }
+}
      // end parserHorse.js code that I added
       window._pdfReader.lastError = null;
       console.log("pdfReader: PDF text length:", fullText.length);
@@ -173,12 +173,11 @@ if (window.parsePPTable) {
  // out.textContent = text;
   // adding another new code🙄
   const horses = window._pdfReader.horses;
-
-     if (!horses || !horses.length) {
-  out. textContent = "ERROR: Full horse parser returned no results.";
-  return   ;
-     }
-out.textContent = JSON.stringify(window._pdfReader.horses, null, 2);
+if (!horses || !horses.length) {
+  out.textContent = "ERROR: Full horse parser returned no results.";
+  return;
+}
+out.textContent = JSON.stringify(horses, null, 2);
   // out.textContent = JSON.stringify(horses, null, 2);
   // end of new code 😳
   console.log("CREATE OK — PP Parsed:", pp);
