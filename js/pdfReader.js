@@ -160,9 +160,7 @@ if (window.parseHorseBlock && window._pdfReader.parsedPP) {
 
   // For now, just display the JSON in #output
   const out = document.getElementById("output");
-  
-  // commenting out one line then adding code till console.log(
- // out.textContent = JSON.stringify(pp, null, 2);
+   out.textContent = JSON.stringify(pp, null, 2);
  // commenting out 7 lines
   //let text = "";
 //for (let h of pp) {
