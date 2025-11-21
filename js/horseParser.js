@@ -302,13 +302,18 @@ module.exports = { parseText, splitHorseBlocks, parseHorseBlock };
 // CORRECT EXPORT WRAPPER
 // ------------------------------
 if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
-  try {
-    window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
-      return window.parseHorseBlockFull(h);
-    });
+   try {
+      window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
+          return {
+              post: h.post,
+              name: h.name,
+              ...window.parseHorseBlockFull(h)
+          };
+      });
 
-    console.log("Full Horse Parse:", window._pdfReader.horses);
-  } catch (err) {
-    console.error("Full horse parse error:", err);
-  }
-}
+      console.log("Full Horse Parse:", window._pdfReader.horses);
+
+    } catch(err) {
+      console.error("Full horse parse error:", err);
+    }
+ }
