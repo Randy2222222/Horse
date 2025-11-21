@@ -59,17 +59,17 @@ if (window.parsePPTable) {
      // added more code for horseParser.js till line 77
      // Run full per-horse parsing using horseParser.js
 
- if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
-  try {
-    window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
+ //if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
+  //try {
+    //window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
       // parsedPP items must include the raw block in h.raw (parsePPTable should keep raw)
       // if parsedPP gives only minimal data, we still try to pass the whole object; parser has fallbacks
-      return {
-        post: h.post || null,
-        name: h.name || null,
-        ...window.parseHorseBlockFull(h.raw || h)
-      };
-    });
+      //return {
+        //post: h.post || null,
+        //name: h.name || null,
+        //...window.parseHorseBlockFull(h.raw || h)
+      //};
+    //});
     console.log("Full Horse Parse:", window._pdfReader.horses);
   } catch (err) {
     console.error("Full horse parse error:", err);
