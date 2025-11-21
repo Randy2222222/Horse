@@ -171,14 +171,14 @@ if (window.parsePPTable) {
 }
   out.textContent = text;
   // adding another new code🙄
-  const horses = window._pdfReader.horses;
+  //const horses = window._pdfReader.horses;
 
-if (!horses || !horses.length) {
-  out.textContent = "ERROR: Full horse parser returned no results.";
-  return;
-}
+//if (!horses || !horses.length) {
+//out.textContent = "ERROR: Full horse parser returned no results.";
+  //return;
+//}
 
-out.textContent = JSON.stringify(horses, null, 2);
+//out.textContent = JSON.stringify(horses, null, 2);
   // end of new code 😳
   console.log("CREATE OK — PP Parsed:", pp);
 }
