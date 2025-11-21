@@ -58,22 +58,22 @@ if (window.parsePPTable) {
      // end of code added
      // added more code for horseParser.js till line 77
      // Run full per-horse parsing using horseParser.js
-if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
-    try {
-        window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
-            return {
-                post: h.post,
-                name: h.name,
-                ...window.parseHorseBlockFull(h.raw)   // <-- sends the full block to the parser
-            };
-        });
+//if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
+  //  try {
+      //  window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
+       //     return {
+              //  post: h.post,
+              //  name: h.name,
+            //    ...window.parseHorseBlockFull(h.raw)   // <-- sends the full block to the parser
+        //    };
+       // });
 
-        console.log("Full Horse Parse:", window._pdfReader.horses);
+       // console.log("Full Horse Parse:", window._pdfReader.horses);
 
-    } catch(err) {
-        console.error("Full horse parse error:", err);
-    }
-}
+   // } catch(err) {
+      //  console.error("Full horse parse error:", err);
+   // }
+// }
      // end parserHorse.js code that I added
       window._pdfReader.lastError = null;
       console.log("pdfReader: PDF text length:", fullText.length);
@@ -163,13 +163,13 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
   // comment out one line before adding a bunch of shit now 4 fucking workflows
   //out.textContent = JSON.stringify(pp, null, 2);
  // commenting out 7 lines
-  //let text = "";
-//for (let h of pp) {
- // text += "POST POSITION: " + h.post + "\n";
-  //text += "------------------------------------\n";
-  //text += h.raw + "\n\n";
-//}
-//out.textContent = text;
+  let text = "";
+     for (let h of pp) {
+     text += "POST POSITION: " + h.post + "\n";
+     text += "------------------------------------\n";
+     text += h.raw + "\n\n";
+}
+  out.textContent = text;
   // adding another new code🙄
   const horses = window._pdfReader.horses;
 
