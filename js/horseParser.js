@@ -301,20 +301,14 @@ module.exports = { parseText, splitHorseBlocks, parseHorseBlock };
 // ------------------------------
 // CORRECT EXPORT WRAPPER
 // ------------------------------
-window.parseHorseBlockFull = function (rawText) {
-  if (!rawText || typeof rawText !== "string") {
-    console.error("parseHorseBlockFull(): rawText must be a string");
-    return null;
-  }
-
+if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
   try {
-    return parseHorseBlock({
-      post: null,
-      name: null,
-      raw: rawText
+    window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
+      return window.parseHorseBlockFull(h);
     });
+
+    console.log("Full Horse Parse:", window._pdfReader.horses);
   } catch (err) {
-    console.error("PARSE ERROR:", err);
-    return null;
+    console.error("Full horse parse error:", err);
   }
-};
+}
