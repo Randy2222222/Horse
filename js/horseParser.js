@@ -299,16 +299,20 @@ if (require.main === module) {
 module.exports = { parseText, splitHorseBlocks, parseHorseBlock };
 
 // ------------------------------
-// EXPORT WRAPPER
+// CORRECT EXPORT WRAPPER
 // ------------------------------
-window.parseFullBrisnetHorse = function (rawText) {
+window.parseHorseBlockFull = function (rawText) {
   if (!rawText || typeof rawText !== "string") {
-    console.error("parseFullBrisnetHorse(): rawText must be a string");
+    console.error("parseHorseBlockFull(): rawText must be a string");
     return null;
   }
 
   try {
-    return parseHorseBlock(rawText);
+    return parseHorseBlock({
+      post: null,
+      name: null,
+      raw: rawText
+    });
   } catch (err) {
     console.error("PARSE ERROR:", err);
     return null;
