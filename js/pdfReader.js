@@ -58,22 +58,23 @@ if (window.parsePPTable) {
      // end of code added
      // added more code for horseParser.js till line 77
      // Run full per-horse parsing using horseParser.js
-//if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
-  //  try {
-      //  window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
-       //     return {
-              //  post: h.post,
-              //  name: h.name,
-            //    ...window.parseHorseBlockFull(h.raw)   // <-- sends the full block to the parser
-        //    };
-       // });
 
-       // console.log("Full Horse Parse:", window._pdfReader.horses);
+ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
+   try {
+      window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
+          return {
+              post: h.post,
+              name: h.name,
+                 ...window.parseHorseBlockFull(h.raw)   // <-- sends the full block to the parser
+          };
+       });
 
-   // } catch(err) {
-      //  console.error("Full horse parse error:", err);
-   // }
-// }
+       console.log("Full Horse Parse:", window._pdfReader.horses);
+
+    } catch(err) {
+      console.error("Full horse parse error:", err);
+    }
+ }
      // end parserHorse.js code that I added
       window._pdfReader.lastError = null;
       console.log("pdfReader: PDF text length:", fullText.length);
