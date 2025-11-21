@@ -178,8 +178,8 @@ if (window.parsePPTable) {
   out. textContent = "ERROR: Full horse parser returned no results.";
   return   ;
      }
-
-   out.textContent = JSON.stringify(horses, null, 2);
+out.textContent = JSON.stringify(window._pdfReader.horses, null, 2);
+  // out.textContent = JSON.stringify(horses, null, 2);
   // end of new code 😳
   console.log("CREATE OK — PP Parsed:", pp);
 }
