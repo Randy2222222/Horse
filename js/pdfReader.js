@@ -163,15 +163,24 @@ if (window.parseHorseBlock && window._pdfReader.parsedPP) {
   
   // commenting out one line then adding code till console.log(
  // out.textContent = JSON.stringify(pp, null, 2);
-  let text = "";
+ // commenting out 7 lines
+  //let text = "";
+//for (let h of pp) {
+ // text += "POST POSITION: " + h.post + "\n";
+  //text += "------------------------------------\n";
+  //text += h.raw + "\n\n";
+//}
+//out.textContent = text;
+  // adding another new code🙄
+  const horses = window._pdfReader.horses;
 
-for (let h of pp) {
-  text += "POST POSITION: " + h.post + "\n";
-  text += "------------------------------------\n";
-  text += h.raw + "\n\n";
+if (!horses || !horses.length) {
+  out.textContent = "ERROR: Full horse parser returned no results.";
+  return;
 }
 
-out.textContent = text;
+out.textContent = JSON.stringify(horses, null, 2);
+  // end of new code 😳
   console.log("CREATE OK — PP Parsed:", pp);
 }
     
