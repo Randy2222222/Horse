@@ -70,11 +70,11 @@ if (window.parsePPTable) {
         //...window.parseHorseBlockFull(h.raw || h)
       //};
     //});
-    console.log("Full Horse Parse:", window._pdfReader.horses);
-  } catch (err) {
-    console.error("Full horse parse error:", err);
-  }
-}
+    //console.log("Full Horse Parse:", window._pdfReader.horses);
+ // } catch (err) {
+  //  console.error("Full horse parse error:", err);
+ // }
+//}
      // end parserHorse.js code that I added
       window._pdfReader.lastError = null;
       console.log("pdfReader: PDF text length:", fullText.length);
