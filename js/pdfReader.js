@@ -45,7 +45,7 @@ if (!pdfjsLib) {
         window._pdfReader.pdfText = fullText;
         updateStatus(`PDF loaded successfully (${pdf.numPages} pages)`);
 
-     // Parse bottom section (optional for now) put this code in till line 55
+     // Parse bottom section (optional for now) put this code in till line 58
 if (window.parsePPTable) {
     try {
         const parsed = window.parsePPTable(fullText);
@@ -56,6 +56,25 @@ if (window.parsePPTable) {
     }
 }
      // end of code added
+     // added more code for horseParser.js till line 77
+     // Run full per-horse parsing using horseParser.js
+if (window.parseHorseBlock && window._pdfReader.parsedPP) {
+    try {
+        window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
+            return {
+                post: h.post,
+                name: h.name,
+                ...window.parseHorseBlock(h)   // <-- sends the full block to the parser
+            };
+        });
+
+        console.log("Full Horse Parse:", window._pdfReader.horses);
+
+    } catch(err) {
+        console.error("Full horse parse error:", err);
+    }
+}
+     // end parserHorse.js code that I added
       window._pdfReader.lastError = null;
       console.log("pdfReader: PDF text length:", fullText.length);
       return true;
