@@ -120,7 +120,53 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
    runBtn.removeEventListener("click", runCreate);
    runBtn.addEventListener("click", runCreate);
 }
- 
+ // Start of horizontal text lineup code⬇️
+ function formatHorseDisplay(h) {
+  let out = "";
+
+  // POST + NAME + TAG
+  out += `${h.post.toString().padEnd(3)} ${h.name} ${h.tag || ""}\n`;
+
+  // OWNER
+  out += `     Own: ${h.owner}\n`;
+
+  // ODDS + SILKS
+  out += `${(h.odds || "").padEnd(6)} ${h.silks}\n`;
+
+  // JOCKEY
+  out += `     ${h.jockey.name} (${h.jockey.record})\n\n`;
+
+  // SIRE / DAM / BREEDER / TRAINER
+  out += `Sire: ${h.sire}\n`;
+  out += `Dam: ${h.dam}\n`;
+  out += `Brdr: ${h.breeder}\n`;
+  out += `Trnr: ${h.trainer}\n\n`;
+
+  // LIFE & YEAR-BY-YEAR
+  out += `Life: ${h.life}\n`;
+  for (const y of Object.keys(h.by_year)) {
+    out += `${y}: ${h.by_year[y]}\n`;
+  }
+  out += "\n";
+
+  // NOTES
+  if (h.notes.length > 0) {
+    out += "NOTES:\n";
+    for (let n of h.notes) out += `  ${n}\n`;
+    out += "\n";
+  }
+
+  // PAST PERFORMANCES (raw but in order)
+  if (h.pastPerformances.length > 0) {
+    out += "PAST PERFORMANCES:\n";
+    for (const pp of h.pastPerformances) {
+      out += `  ${pp.raw}\n`;
+    }
+  }
+
+  return out;
+}
+ // End of horizontal lineup code ⬆️
  function runCreate() {
   if (!window._pdfReader.pdfDoc) {
     alert("No PDF loaded. Please upload a Brisnet PDF first.");
