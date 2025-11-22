@@ -24,8 +24,7 @@
     while ((match = HORSE_RE.exec(t)) !== null) {
       horses.push({
         idx: match.index,
-        post: Number(match[1]),
-        //name: match[2].trim()
+        name: match[2].trim()
         neme: string(match[2])
       });
     }
