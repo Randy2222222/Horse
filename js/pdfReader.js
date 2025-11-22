@@ -182,13 +182,20 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
   
   // For now, just display the JSON in #output
   const out = document.getElementById("output");
+  // Replacing: let text code ⬇️
   let text = "";
-    for (let h of pp) {
-    text += "POST POSITION: " + h.post + "\n";
-    text += "------------------------------------\n";
-    text += h.raw + "\n\n";
+for (let h of window._pdfReader.horses) {
+  text += formatHorseDisplay(h) + "\n\n";
 }
-   out.textContent = text; 
+out.textContent = text;
+  // End relacement of: let text = ⬆️
+ // let text = "";
+   // for (let h of pp) {
+   // text += "POST POSITION: " + h.post + "\n";
+    // text += "------------------------------------\n";
+    // text += h.raw + "\n\n";
+// }
+  // out.textContent = text; 
   console.log("CREATE OK — PP Parsed:", pp);
 }
     
