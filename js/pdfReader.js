@@ -55,9 +55,7 @@ if (!pdfjsLib) {
      //   console.error("Parser error:", err);
    // }
 // }
-     // end of code added
-     // added more code for horseParser.js till line 77
-     // Run full per-horse parsing using horseParser.js
+     // Beggining of new Parser code
 if (window.parsePPTable) {
   window._pdfReader.parsedPP = window.parsePPTable(fullText);
 }
@@ -66,23 +64,7 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
     return { post: b.post, name: b.name, ...window.parseHorseBlockFull(b) };
   });
 }
- //if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
-  //try {
-    //window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
-      // parsedPP items must include the raw block in h.raw (parsePPTable should keep raw)
-      // if parsedPP gives only minimal data, we still try to pass the whole object; parser has fallbacks
-      //return {
-        //post: h.post || null,
-        //name: h.name || null,
-        //...window.parseHorseBlockFull(h.raw || h)
-      //};
-    //});
-    //console.log("Full Horse Parse:", window._pdfReader.horses);
- // } catch (err) {
-  //  console.error("Full horse parse error:", err);
- // }
-//}
-     // end parserHorse.js code that I added
+ // Detect bugs
       window._pdfReader.lastError = null;
       console.log("pdfReader: PDF text length:", fullText.length);
       return true;
@@ -170,14 +152,16 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
   const out = document.getElementById("output");
   // comment out one line before adding a bunch of shit now 4 fucking workflows
   //out.textContent = JSON.stringify(pp, null, 2);
- // commenting out 7 lines
-  let text = "";
-    for (let h of pp) {
-      text += "POST POSITION: " + h.post + "\n";
-      text += "------------------------------------\n";
-     text += h.raw + "\n\n";
-  }
-     out.textContent = text;
+ // commenting out below ⬇️
+ // let text = "";
+   // for (let h of pp) {
+ //     text += "POST POSITION: " + h.post + "\n";
+   //   text += "------------------------------------\n";
+   //  text += h.raw + "\n\n";
+//  }
+   //  out.textContent = text;
+  // put line in below before taking out above ⬆️
+  out.textContent = JSON.stringify(window._pdfReader.horses, null, 2);
   // adding another new code🙄
   //const horses = window._pdfReader.horses;
 //if (!horses || !horses.length) {
