@@ -25,8 +25,7 @@
       horses.push({
         idx: match.index,
         name: match[2].trim()
-       // name: string(match[2])
-        //raw: raw(
+       // raw: raw
       });
     }
 
