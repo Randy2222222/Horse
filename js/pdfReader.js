@@ -159,7 +159,14 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
     text += "------------------------------------\n";
     text += h.raw + "\n\n";
 }
-   out.textContent = text;
+  // comment out one line ⬇️ that went with ⬆️
+  // out.textContent = text; 
+  // Add Header 
+  out.textContent = 
+    window._brisHeader + "\n\n" +
+    JSON.stringify(horses, null, 2) + "\n\n" +
+    window._brisFooter;
+  // End Header
   // put line in below before taking out above ⬆️
  // out.textContent = JSON.stringify(window._pdfReader.horses, null, 2);
   // adding another new code🙄
