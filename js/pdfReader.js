@@ -156,7 +156,7 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
  let text = "";
     for (let h of pp) {
     text += "POST POSITION: " + h.post + "\n";
-    text += "------------------------------------";
+    text += "------------------------------------"\n;
     text += h.raw + "\n\n";
 }
    out.textContent = text;
