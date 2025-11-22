@@ -46,19 +46,26 @@ if (!pdfjsLib) {
         updateStatus(`PDF loaded successfully (${pdf.numPages} pages)`);
 
      // Parse bottom section (optional for now) put this code in till line 58
-if (window.parsePPTable) {
-    try {
-        const parsed = window.parsePPTable(fullText);
-        window._pdfReader.parsedPP = parsed;
-        console.log("Parsed PP:", parsed);
-    } catch(err) {
-        console.error("Parser error:", err);
-    }
-}
+//if (window.parsePPTable) {
+  //  try {
+      //  const parsed = window.parsePPTable(fullText);
+      //  window._pdfReader.parsedPP = parsed;
+      //  console.log("Parsed PP:", parsed);
+//    } catch(err) {
+     //   console.error("Parser error:", err);
+   // }
+// }
      // end of code added
      // added more code for horseParser.js till line 77
      // Run full per-horse parsing using horseParser.js
-
+if (window.parsePPTable) {
+  window._pdfReader.parsedPP = window.parsePPTable(fullText);
+}
+if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
+  window._pdfReader.horses = window._pdfReader.parsedPP.map(b => {
+    return { post: b.post, name: b.name, ...window.parseHorseBlockFull(b) };
+  });
+}
  //if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
   //try {
     //window._pdfReader.horses = window._pdfReader.parsedPP.map(h => {
@@ -168,7 +175,7 @@ if (window.parsePPTable) {
     for (let h of pp) {
       text += "POST POSITION: " + h.post + "\n";
       text += "------------------------------------\n";
-      text += h.raw + "\n\n";
+     text += h.raw + "\n\n";
   }
      out.textContent = text;
   // adding another new code🙄
