@@ -168,7 +168,7 @@ if (window.parsePPTable) {
     for (let h of pp) {
       text += "POST POSITION: " + h.post + "\n";
       text += "------------------------------------\n";
-      text += h.name + "\n";
+      text += h.name + "\n\n";
      // text += h.raw + "\n\n";
   }
      out.textContent = text;
