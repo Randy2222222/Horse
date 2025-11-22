@@ -124,48 +124,48 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
  function formatHorseDisplay(h) {
   let out = "";
 
-  // POST + NAME + TAG
-  out += `${h.post.toString().padEnd(3)} ${h.name} ${h.tag || ""}\n`;
+  out += "============== HORSE " + h.post + " ==============\n";
+  out += "NAME: " + h.name + " " + (h.tag || "") + "\n";
+  out += "OWNER: " + h.owner + "\n";
+  out += "ODDS: " + h.odds + "\n";
+  out += "SILKS: " + h.silks + "\n";
+  out += "JOCKEY: " + h.jockey.name + " (" + h.jockey.record + ")\n";
+  out += "SEX/AGE: " + h.sex + " " + h.age + "\n";
+  out += "TRAINER: " + h.trainer + "\n";
+  out += "BREEDER: " + h.breeder + "\n";
+  out += "SIRE: " + h.sire + "\n";
+  out += "DAM: " + h.dam + "\n\n";
 
-  // OWNER
-  out += `     Own: ${h.owner}\n`;
-
-  // ODDS + SILKS
-  out += `${(h.odds || "").padEnd(6)} ${h.silks}\n`;
-
-  // JOCKEY
-  out += `     ${h.jockey.name} (${h.jockey.record})\n\n`;
-
-  // SIRE / DAM / BREEDER / TRAINER
-  out += `Sire: ${h.sire}\n`;
-  out += `Dam: ${h.dam}\n`;
-  out += `Brdr: ${h.breeder}\n`;
-  out += `Trnr: ${h.trainer}\n\n`;
-
-  // LIFE & YEAR-BY-YEAR
-  out += `Life: ${h.life}\n`;
-  for (const y of Object.keys(h.by_year)) {
-    out += `${y}: ${h.by_year[y]}\n`;
-  }
-  out += "\n";
-
-  // NOTES
-  if (h.notes.length > 0) {
-    out += "NOTES:\n";
-    for (let n of h.notes) out += `  ${n}\n`;
-    out += "\n";
+  out += "LIFE LINE: " + h.life + "\n";
+  for (const y in h.by_year) {
+    out += "YEAR " + y + ": " + h.by_year[y] + "\n";
   }
 
-  // PAST PERFORMANCES (raw but in order)
-  if (h.pastPerformances.length > 0) {
-    out += "PAST PERFORMANCES:\n";
-    for (const pp of h.pastPerformances) {
-      out += `  ${pp.raw}\n`;
-    }
+  out += "\nSURFACE LINES:\n";
+  for (const s in h.surfaces) {
+    out += "  " + s + ": " + h.surfaces[s].join(" | ") + "\n";
   }
+
+  out += "\nSTAT LINES:\n";
+  for (const l of h.stat_lines) out += "  " + l + "\n";
+
+  out += "\nWORKOUTS:\n";
+  for (const w of h.workouts) out += "  " + w + "\n";
+
+  out += "\nNOTES:\n";
+  for (const n of h.notes) out += "  " + n + "\n";
+
+  out += "\nPAST PERFORMANCES (FULL RAW BLOCK):\n";
+  for (const pp of h.pastPerformances) {
+    out += "-----\n" + pp.raw + "\n";
+  }
+
+  out += "\nRAW BLOCK:\n";
+  out += "---------------- RAW ----------------\n";
+  out += h.raw + "\n";
 
   return out;
-}
+} 
  // End of horizontal lineup code ⬆️
  function runCreate() {
   if (!window._pdfReader.pdfDoc) {
