@@ -6,13 +6,13 @@
   const pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib || null;
 if (!pdfjsLib) {
    console.error("pdfReader: pdfjsLib not found. Make sure pdf.min.js is in <head>.");
-   // show status if element exists
+  // show status if element exists
    const st = document.getElementById("pdfStatus");
   if (st) st.textContent = "ERROR: pdf.js not loaded.";
    return;
    }
 
-  // Shared state exported to window so analyzer can access if needed
+ // Shared state exported to window so analyzer can access if needed
   window._pdfReader = {
     pdfText: "",
     pdfDoc: null,
@@ -30,32 +30,20 @@ if (!pdfjsLib) {
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       window._pdfReader.pdfDoc = pdf;
 
-      // Extract text page by page (robust for most Brisnet PDFs)
+     // Extract text page by page (robust for most Brisnet PDFs)
       let fullText = "";
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        // defensively map strings
        
-       // replaced next line with line afer that
-        //const pageText = content.items.map(it => it.str || "").join(" ");
+     // defensively map strings
        const pageText = content.items.map(it => it.str || "").join("\n");
         fullText += pageText + "\n\n";
       }
         window._pdfReader.pdfText = fullText;
         updateStatus(`PDF loaded successfully (${pdf.numPages} pages)`);
-
-     // Parse bottom section (optional for now) put this code in till line 58
-//if (window.parsePPTable) {
-  //  try {
-      //  const parsed = window.parsePPTable(fullText);
-      //  window._pdfReader.parsedPP = parsed;
-      //  console.log("Parsed PP:", parsed);
-//    } catch(err) {
-     //   console.error("Parser error:", err);
-   // }
-// }
-     // Beggining of new Parser code
+    
+     // Beggining of Parser code
 if (window.parsePPTable) {
   window._pdfReader.parsedPP = window.parsePPTable(fullText);
 }
@@ -64,14 +52,16 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
     return { post: b.post, name: b.name, ...window.parseHorseBlockFull(b) };
   });
 }
- // Detect bugs
+
+  // Detect bugs
       window._pdfReader.lastError = null;
       console.log("pdfReader: PDF text length:", fullText.length);
       return true;
     } catch (err) {
       window._pdfReader.lastError = err;
       console.error("pdfReader: Error processing PDF", err);
-      // Provide a precise status for iPad debugging:
+     
+     // Provide a precise status for iPad debugging:
       updateStatus("Error loading PDF: " + (err && err.message ? err.message : String(err)));
       return false;
     }
@@ -92,7 +82,8 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
       const reader = new FileReader();
       reader.onload = async function (ev) {
         const arrayBuffer = ev.target.result;
-        // Process with pdf.js
+       
+       // Process with pdf.js
         await processArrayBuffer(arrayBuffer);
       };
       reader.onerror = function (ev) {
@@ -115,21 +106,19 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
       console.warn("pdfReader: #pdfFile not found in DOM");
       return;
     }
+   
     // remove previous listeners to avoid duplicates
     input.removeEventListener("change", handleFileInputChange);
     input.addEventListener("change", handleFileInputChange);
     console.log("pdfReader: listener attached to #pdfFile");
   }
- // Quick confirm (you can replace this with your analyzer entrypoint)
- // alert("PDF loaded. Pages: " + window._pdfReader.pdfDoc.numPages + "\nExtracted text length: " + 
- // }
  
  // Attach Button Create and Funtion to Run it
  function attachRunButton() {
-  const runBtn = document.getElementById("runAnalysis");
-  if (!runBtn) return;
-  runBtn.removeEventListener("click", runCreate);
-  runBtn.addEventListener("click", runCreate);
+   const runBtn = document.getElementById("runAnalysis");
+   if (!runBtn) return;
+   runBtn.removeEventListener("click", runCreate);
+   runBtn.addEventListener("click", runCreate);
 }
  
  function runCreate() {
@@ -139,45 +128,21 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
   }
 
   // 🔹 At this point the PDF is loaded AND Parsed
-  // Insert new code till: Attach on Dom comment
-
   const pp = window._pdfReader.parsedPP;
-
   if (!pp || !pp.length) {
     alert("Parsing failed — no PP data found.");
     return;
   }
-
+  
   // For now, just display the JSON in #output
   const out = document.getElementById("output");
-  // comment out one line before adding a bunch of shit now 4 fucking workflows
-  //out.textContent = JSON.stringify(pp, null, 2);
- // commenting out below ⬇️
- let text = "";
+  let text = "";
     for (let h of pp) {
     text += "POST POSITION: " + h.post + "\n";
     text += "------------------------------------\n";
     text += h.raw + "\n\n";
 }
-  // comment out one line ⬇️ that went with ⬆️
-  out.textContent = text; 
-  // Add Header 
- // out.textContent = 
-   // window._brisHeader + "\n\n" +
-  //  JSON.stringify(horses, null, 2) + "\n\n" +
-   // window._brisFooter;
-  // End Header
-  // put line in below before taking out above ⬆️
- // out.textContent = JSON.stringify(window._pdfReader.horses, null, 2);
-  // adding another new code🙄
-  //const horses = window._pdfReader.horses;
-//if (!horses || !horses.length) {
- // out.textContent = "ERROR: Full horse parser returned no results.";
-  //return;
-//}
-//out.textContent = JSON.stringify(horses, null, 2);
-  // out.textContent = JSON.stringify(horses, null, 2);
-  // end of new code 😳
+   out.textContent = text; 
   console.log("CREATE OK — PP Parsed:", pp);
 }
     
