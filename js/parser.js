@@ -22,12 +22,12 @@
     let match;
 
     while ((match = HORSE_RE.exec(t)) !== null) {
-      horses.push({
-        idx: match.index,
-        name: match[2].trim()
-        // raw: raw[2].trim()
-      });
-    }
+  horses.push({
+    idx: match.index,
+    post: Number(match[1]),    
+    name: match[2].trim()
+  });
+}
 
     if (!horses.length) {
       console.warn("NO HORSE ANCHORS FOUND");
