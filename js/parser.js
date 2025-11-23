@@ -193,10 +193,10 @@
   function parsePPTable(text) {
     // Add Header with cuts
         // ---------- CLEAN TOP-OF-PAGE BLOCK BEFORE HORSE PARSING ----------
-   if (!text) return [];
+     //  if (!text) return [];
 
     // Normalize CRLF → LF
-   let t = text.replace(/\r/g, '\n');
+  // let t = text.replace(/\r/g, '\n');
 
     // 1) Strip COPYRIGHT + any invisible pre-header junk
    // t = t.replace(/^[\s\S]{0,300}(?=Aqueduct)/i, '');
@@ -207,10 +207,10 @@
    // if (headerMatch) headerLine = headerMatch[1].trim();
 
     // 3) Remove the 4 TOP BLOCKS (Speed Last Race / Prime Power / Class Rating / Best Speed)
-    t = t.replace(/#\s+Speed[\s\S]+?National Archive\s+85/, '');
+  //  t = t.replace(/#\s+Speed[\s\S]+?National Archive\s+85/, '');
 
     // 4) Remove PARS block
-   t = t.replace(/E1[\s\S]+?88/, '');
+ //  t = t.replace(/E1[\s\S]+?88/, '');
 
     // 5) Extract FOOTER paragraph (the big description block)
    // let footer = '';
