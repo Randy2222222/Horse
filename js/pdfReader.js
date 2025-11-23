@@ -120,53 +120,7 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
    runBtn.removeEventListener("click", runCreate);
    runBtn.addEventListener("click", runCreate);
 }
- // Start of horizontal text lineup code⬇️
- function formatHorseDisplay(h) {
-  let out = "";
-
-  out += "============== HORSE " + h.post + " ==============\n";
-  out += "NAME: " + h.name + " " + (h.tag || "") + "\n";
-  out += "OWNER: " + h.owner + "\n";
-  out += "ODDS: " + h.odds + "\n";
-  out += "SILKS: " + h.silks + "\n";
-  out += "JOCKEY: " + h.jockey.name + " (" + h.jockey.record + ")\n";
-  out += "SEX/AGE: " + h.sex + " " + h.age + "\n";
-  out += "TRAINER: " + h.trainer + "\n";
-  out += "BREEDER: " + h.breeder + "\n";
-  out += "SIRE: " + h.sire + "\n";
-  out += "DAM: " + h.dam + "\n\n";
-
-  out += "LIFE LINE: " + h.life + "\n";
-  for (const y in h.by_year) {
-    out += "YEAR " + y + ": " + h.by_year[y] + "\n";
-  }
-
-  out += "\nSURFACE LINES:\n";
-  for (const s in h.surfaces) {
-    out += "  " + s + ": " + h.surfaces[s].join(" | ") + "\n";
-  }
-
-  out += "\nSTAT LINES:\n";
-  for (const l of h.stat_lines) out += "  " + l + "\n";
-
-  out += "\nWORKOUTS:\n";
-  for (const w of h.workouts) out += "  " + w + "\n";
-
-  out += "\nNOTES:\n";
-  for (const n of h.notes) out += "  " + n + "\n";
-
-  out += "\nPAST PERFORMANCES (FULL RAW BLOCK):\n";
-  for (const pp of h.pastPerformances) {
-    out += "-----\n" + pp.raw + "\n";
-  }
-
-  out += "\nRAW BLOCK:\n";
-  out += "---------------- RAW ----------------\n";
-  out += h.raw + "\n";
-
-  return out;
-} 
- // End of horizontal lineup code ⬆️
+ 
  function runCreate() {
   if (!window._pdfReader.pdfDoc) {
     alert("No PDF loaded. Please upload a Brisnet PDF first.");
@@ -182,20 +136,13 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
   
   // For now, just display the JSON in #output
   const out = document.getElementById("output");
-  // Replacing: let text code ⬇️
-  let text = "";
-for (let h of window._pdfReader.horses) {
-  text += formatHorseDisplay(h) + "\n\n";
-}
-out.textContent = text;
-  // End relacement of: let text = ⬆️
- // let text = "";
-   // for (let h of pp) {
-   // text += "POST POSITION: " + h.post + "\n";
-    // text += "------------------------------------\n";
-    // text += h.raw + "\n\n";
-// }
-  // out.textContent = text; 
+   let text = "";
+      for (let h of pp) {
+       //text += "POST POSITION: " + h.post + "\n";
+       text += "------------------------------------\n";
+       text += h.raw + "\n\n";
+   }
+    out.textContent = text; 
   console.log("CREATE OK — PP Parsed:", pp);
 }
     
