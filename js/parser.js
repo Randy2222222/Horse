@@ -68,7 +68,7 @@
     if (m) return { sex: m[1].replace(/\./, ''), age: m[2] };
     return { sex: '', age: '' };
   }
-    get rid of prime power
+    
   function parsePrimePower(block) {
     if (!block) return '';
     const m = block.match(/Prime Power:\s*([0-9.]+\s*(?:\([^)]*\))?)/i);
