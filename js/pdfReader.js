@@ -135,18 +135,17 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
   }
   
   // For now, just display the JSON in #output 
-  const out = document.getElementById("output");
-  let text = "";
-     for (let h of pp) {
-      text += "------------------------------------\n";
-      text += h.raw + "\n\n";
- 
-   out.textContent = text; 
- 
-   console.log("CREATE OK — PP Parsed:", pp);
-}
- }
-    
+  // Comment out working section ⬇️
+ // const out = document.getElementById("output");
+//  let text = "";
+   //  for (let h of pp) {
+    // text += "------------------------------------\n";
+     // text += h.raw + "\n\n";
+    // out.textContent = text; 
+ // console.log("CREATE OK — PP Parsed:", pp);
+// }
+// }
+   // End of working section ⬆️ 
  // Attach on DOM ready (non-blocking)
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
