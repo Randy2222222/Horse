@@ -142,10 +142,10 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
       text += h.raw + "\n\n";p
  
    out.textContent = text; 
-  }
- }
-   console.log("CREATE OK — PP Parsed:", pp);
  
+   console.log("CREATE OK — PP Parsed:", pp);
+}
+ }
     
  // Attach on DOM ready (non-blocking)
   if (document.readyState === "loading") {
