@@ -133,6 +133,7 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
     alert("Parsing failed — no PP data found.");
     return;
   }
+ }
   // New code for fomatting ⬇️
   // ---------- FORMATTER ----------
 try {
