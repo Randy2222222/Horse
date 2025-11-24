@@ -133,6 +133,21 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
     alert("Parsing failed — no PP data found.");
     return;
   }
+  // New code for fomatting ⬇️
+  // ---------- FORMATTER ----------
+try {
+  const horses = parseText(window._pdfReader.fullText);
+  const output = formatHorses(horses);
+
+  // show in your output box
+  const outBox = document.getElementById("output");
+  if (outBox) outBox.textContent = output;
+
+  console.log("Formatter OK");
+} catch (err) {
+  console.error("Formatter error:", err);
+}
+  // New code for formatting end ⬆️
   
   // For now, just display the JSON in #output 
   // Comment out working section ⬇️
