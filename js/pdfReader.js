@@ -156,7 +156,7 @@ console.log(output);
  //  }
   // out.textContent = text; 
  // console.log("CREATE OK — PP Parsed:", pp); ⬆️ end commented out
-}
+// }
     
  // Attach on DOM ready (non-blocking)
   if (document.readyState === "loading") {
