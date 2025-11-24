@@ -139,7 +139,7 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
   let text = "";
      for (let h of pp) {
       text += "------------------------------------\n";
-      text += h.raw + "\n\n";p
+      text += h.raw + "\n\n";
  
    out.textContent = text; 
  
