@@ -140,8 +140,9 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
      for (let h of pp) {
       text += "------------------------------------\n";
       text += h.raw + "\n\n";p
- }
+ 
    out.textContent = text; 
+  }
  }
    console.log("CREATE OK — PP Parsed:", pp);
  
