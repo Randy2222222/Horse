@@ -133,17 +133,29 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
     alert("Parsing failed — no PP data found.");
     return;
   }
+  // 🔹 PDF text is ready. Now run parser + formatter.
+
+// 1. Convert raw PDF text into horse objects
+const horses = parseText(window._pdfReader.fullText);
+
+// 2. Format those horses into Brisnet-style output
+const output = formatHorses(horses);
+
+// 3. Display the result
+document.getElementById("output").textContent = output;
+
+// Optional debug
+console.log(output);
   
-  // For now, just display the JSON in #output
-  const out = document.getElementById("output");
-   let text = "";
-      for (let h of pp) {
-       //text += "POST POSITION: " + h.post + "\n";
-       text += "------------------------------------\n";
-       text += h.raw + "\n\n";
-   }
-    out.textContent = text; 
-  console.log("CREATE OK — PP Parsed:", pp);
+  // For now, just display the JSON in #output ⬇️ comment out next section
+ // const out = document.getElementById("output");
+ // let text = "";
+     // for (let h of pp) {
+      // text += "------------------------------------\n";
+      // text += h.raw + "\n\n";
+ //  }
+  // out.textContent = text; 
+ // console.log("CREATE OK — PP Parsed:", pp); ⬆️ end commented out
 }
     
  // Attach on DOM ready (non-blocking)
