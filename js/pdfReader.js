@@ -134,7 +134,7 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
     alert("Parsing failed — no PP data found.");
     return;
   }
- }
+// } commenting out bracket I think this is a mistake moving it down ❔
   // New code for fomatting ⬇️
   // ---------- FORMATTER ----------
 try {
@@ -151,6 +151,7 @@ try {
 } catch (err) {
   console.error("Formatter error:", err);
 }
+ } // moved bracket down marked original with white ❓
   // New code for formatting end ⬆️
   
   // For now, just display the JSON in #output 
