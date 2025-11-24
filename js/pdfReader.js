@@ -41,6 +41,7 @@ if (!pdfjsLib) {
         fullText += pageText + "\n\n";
       }
         window._pdfReader.pdfText = fullText;
+        window._pdfReader.fullText = fullText; // Added 1 line 🔥
         updateStatus(`PDF loaded successfully (${pdf.numPages} pages)`);
     
      // Beggining of Parser code
