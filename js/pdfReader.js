@@ -142,9 +142,11 @@ try {
  // console.log("FULL TEXT:", window._pdfReader.fullText);🔥
   const horses = parseText(window._pdfReader.fullText);
   const output = formatHorses(horses);
-
+// 🤣 put more code in. I will comment out the next line of code with 🤣
+ const raw = `PUT THE RAW TEXT OF THIS HORSE HERE EXACTLY LIKE IN YOUR FILE`; // delete
+document.getElementById('output').textContent = buildHorseHeader(raw); // delete
   // show in your output box
-  const outBox = document.getElementById("output");
+//  const outBox = document.getElementById("output"); 🤣
   if (outBox) outBox.textContent = output;
 
   console.log("Formatter OK");
