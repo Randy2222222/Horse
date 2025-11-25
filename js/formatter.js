@@ -1,159 +1,152 @@
-// formatter.js — Brisnet-style 3-column top section
+// formatter.js — clean version
+// Takes a horse raw block (string or parsedHorse.raw) and builds the 3-column top section.
 
 (function (global) {
   "use strict";
 
-  function trim(x) { return String(x || "").trim(); }
+  function trim(s) { return String(s || "").trim(); }
 
-  function find(lines, test) {
+  function getLines(raw) {
+    return String(raw || "")
+      .split(/\r?\n/)
+      .map(l => trim(l))
+      .filter(l => l !== "");
+  }
+
+  function findIndex(lines, fn) {
     for (let i = 0; i < lines.length; i++) {
-      if (test(trim(lines[i]))) return i;
+      if (fn(lines[i])) return i;
     }
     return -1;
   }
 
-  function buildBlock1(lines) {
-    // Post number
-    const idxPost = find(lines, t => /^\d+$/.test(t));
-    const post = trim(lines[idxPost]);
+  // ---------------- BLOCK 1 ----------------
+  function block1(lines) {
+    const post = lines[0] || "";
+    const nameProg = lines[1] || "";
+    let name = nameProg;
+    let tag = "";
 
-    // Name + (P #)
-    const nameProg = trim(lines[idxPost + 1]); // "Scythian (P 5)"
-    let name = nameProg, prog = "";
-    const pIndex = nameProg.indexOf("(");
-    if (pIndex !== -1) {
-      name = nameProg.slice(0, pIndex).trim();
-      prog = nameProg.slice(pIndex).trim();
+    const p = nameProg.indexOf("(");
+    if (p !== -1) {
+      name = nameProg.slice(0, p).trim();
+      tag = nameProg.slice(p).trim();
     }
 
-    // Owner
-    const idxOwn = find(lines, t => /^Own:?$/.test(t.replace(/\s+/g, "")));
-    const owner = trim(lines[idxOwn + 1]);
+    const idxOwn = findIndex(lines, l => /^Own:?$/i.test(l.replace(/\s+/g, "")));
+    const owner = (idxOwn !== -1) ? (lines[idxOwn + 1] || "") : "";
 
-    // Odds + silks
-    const idxOdds = find(lines, t => /\d+\/\d+/.test(t));
-    const odds = trim(lines[idxOdds]);
-    const silks = trim(lines[idxOdds + 1]);
-
-    // Jockey
-    const jockey = trim(lines[idxOdds + 2]);
-
-    // EXACT Brisnet spacing from your sample:
-    const line1 = post + "        " + name + "   " + prog;   // 8 spaces, 3 spaces
-    const line2 = "          Own: " + owner;                // 10 spaces
-    const line3 = odds.padEnd(8, " ") + silks;              // odds padded
-    const line4 = jockey;
-
-    return [ line1, line2, line3, line4 ];
-  }
-
-  function buildBlock2(lines) {
-    // Gender, color, age: B. / f. / 3
-    const iB = find(lines, t => t === "B." || t === "B");
-    const breedLine = trim(lines[iB]) + " " + trim(lines[iB+1]) + " " + trim(lines[iB+2]);
-
-    // Sire:  Tiz the Law... $30,000
-    const iSire = find(lines, t => /^Sire\s*:/.test(t));
-    const sire = trim(lines[iSire + 1]);
-    const fee  = trim(lines[iSire + 2]);
-    const sireLine = "Sire:  " + sire + " " + fee;
-
-    // Dam
-    const iDam = find(lines, t => /^Dam:/.test(t));
-    const dam = trim(lines[iDam + 1]);
-    const damLine = "Dam: " + dam;
-
-    // Breeder
-    const iBr = find(lines, t => /^Brdr:/.test(t));
-    const brdr = trim(lines[iBr + 1]);
-    const brdrLine = "Brdr:   " + brdr;       // spacing EXACTLY as you typed
-
-    // Trainer
-    const iTr = find(lines, t => /^Trnr:/.test(t));
-    const trnr = trim(lines[iTr + 1]);
-    const trnrLine = "Trnr:    " + trnr;      // spacing EXACTLY as you typed
+    const idxOdds = findIndex(lines, l => /\d+\/\d+/.test(l));
+    const odds = (idxOdds !== -1) ? lines[idxOdds] : "";
+    const silks = (idxOdds !== -1) ? (lines[idxOdds + 1] || "") : "";
+    const jockey = (idxOdds !== -1) ? (lines[idxOdds + 2] || "") : "";
 
     return [
-      breedLine,
-      sireLine,
-      damLine,
-      brdrLine,
-      trnrLine
+      post + "        " + name + "   " + tag,
+      "          Own: " + owner,
+      odds.padEnd(8, " ") + silks,
+      jockey
     ];
   }
 
-  function buildBlock3(lines) {
-    // Life block
-    const iLife = find(lines, t => /^Life:$/.test(t));
-    const L = [
-      trim(lines[iLife+1]),
-      trim(lines[iLife+2]),
-      trim(lines[iLife+3]),
-      trim(lines[iLife+4]),
-      trim(lines[iLife+5])
-    ]; // omit the last number (e.g., 87)
-    const lifeLine = "Life:    " + L.join(" ");
+  // ---------------- BLOCK 2 ----------------
+  function block2(lines) {
+    const idxB = findIndex(lines, l => l === "B." || l === "B");
+    const breed = (idxB !== -1)
+      ? (lines[idxB] + " " + (lines[idxB + 1] || "") + " " + (lines[idxB + 2] || "")).trim()
+      : "";
 
-    // 2025 block
-    const i2025 = find(lines, t => /^2025$/.test(t));
-    const Y25 = [
-      trim(lines[i2025+1]),
-      trim(lines[i2025+2]),
-      trim(lines[i2025+3]),
-      trim(lines[i2025+4]),
-      trim(lines[i2025+5])
-    ]; // omit trailing number (86)
-    const y25Line = "2025:    " + Y25.join(" ");
+    const idxSire = findIndex(lines, l => /^Sire\s*:$/i.test(l.replace(/\s+/g, " ")));
+    const sireName = (idxSire !== -1) ? (lines[idxSire + 1] || "") : "";
+    const sireFee = (idxSire !== -1) ? (lines[idxSire + 2] || "") : "";
+    const sireLine = "Sire:  " + sireName + " " + sireFee;
 
-    // 2024 block
-    const i2024 = find(lines, t => /^2024$/.test(t));
-    const Y24 = [
-      trim(lines[i2024+1]),
-      trim(lines[i2024+2]),
-      trim(lines[i2024+3]),
-      trim(lines[i2024+4]),
-      trim(lines[i2024+5])
-    ];
-    const y24Line = "2024:    " + Y24.join(" ");
+    const idxDam = findIndex(lines, l => /^Dam:$/i.test(l));
+    const damLine = "Dam: " + ((idxDam !== -1) ? lines[idxDam + 1] : "");
 
-    // Weight centered-ish
-    const weightLine = "              122";
+    const idxBrdr = findIndex(lines, l => /^Brdr:$/i.test(l));
+    const brdrLine = "Brdr:   " + ((idxBrdr !== -1) ? lines[idxBrdr + 1] : "");
 
-    return [
-      lifeLine,
-      y25Line,
-      y24Line,
-      "",
-      weightLine
-    ];
+    const idxTrnr = findIndex(lines, l => /^Trnr:$/i.test(l));
+    const trnrLine = "Trnr:    " + ((idxTrnr !== -1) ? lines[idxTrnr + 1] : "");
+
+    return [breed, sireLine, damLine, brdrLine, trnrLine];
   }
 
-  // ⭐ THIS is the Brisnet-style 3-column layout you asked for
-  function combineThreeBlocksSideBySide(b1, b2, b3) {
-    // Brisnet PDF widths based on your screenshot
-    const col1 = 45;
-    const col2 = 45;
+  // ---------------- BLOCK 3 ----------------
+  function block3(lines) {
+    const idxLife = findIndex(lines, l => /^Life:$/i.test(l));
+    const idx2025 = findIndex(lines, l => /^2025$/i.test(l));
+    const idx2024 = findIndex(lines, l => /^2024$/i.test(l));
 
-    const max = Math.max(b1.length, b2.length, b3.length);
+    let lifeParts = [];
+    if (idxLife !== -1 && idx2025 > idxLife) {
+      lifeParts = lines.slice(idxLife + 1, idx2025);
+      if (lifeParts.length) lifeParts.pop(); // drop trailing 87
+    }
+
+    let parts2025 = [];
+    if (idx2025 !== -1 && idx2024 > idx2025) {
+      parts2025 = lines.slice(idx2025 + 1, idx2024);
+      if (parts2025.length) parts2025.pop(); // drop 86
+    }
+
+    let parts2024 = [];
+    if (idx2024 !== -1) {
+      parts2024 = lines.slice(idx2024 + 1, idx2024 + 7);
+      if (parts2024.length) parts2024.pop(); // drop 87
+    }
+
+    const lifeLine  = "Life:    " + lifeParts.join(" ");
+    const y2025Line = "2025:    " + parts2025.join(" ");
+    const y2024Line = "2024:    " + parts2024.join(" ");
+
+    // Weight 122
+    const idxDate = findIndex(lines, l => /^DATE TRK/i.test(l));
+    let weight = "";
+    if (idxDate !== -1) {
+      for (let i = idxDate - 1; i >= 0; i--) {
+        if (/^\d+$/.test(lines[i])) {
+          weight = lines[i];
+          break;
+        }
+      }
+    }
+
+    const weightLine = "              " + weight;
+
+    return [lifeLine, y2025Line, y2024Line, "", weightLine];
+  }
+
+  // ---------------- COMBINE ----------------
+  function combine(b1, b2, b3) {
+    const w1 = 45, w2 = 45;
+    const rows = Math.max(b1.length, b2.length, b3.length);
     const out = [];
 
-    for (let i = 0; i < max; i++) {
-      const c1 = (b1[i] || "").padEnd(col1, " ");
-      const c2 = (b2[i] || "").padEnd(col2, " ");
+    for (let i = 0; i < rows; i++) {
+      const c1 = (b1[i] || "").padEnd(w1, " ");
+      const c2 = (b2[i] || "").padEnd(w2, " ");
       const c3 = (b3[i] || "");
       out.push(c1 + c2 + c3);
     }
     return out.join("\n");
   }
 
-  function formatHorseTopSection(rawLines) {
-    const b1 = buildBlock1(rawLines);
-    const b2 = buildBlock2(rawLines);
-    const b3 = buildBlock3(rawLines);
-    return combineThreeBlocksSideBySide(b1, b2, b3);
+  // ---------------- PUBLIC ----------------
+  function formatHorseTop(horseOrRaw) {
+    const raw = (typeof horseOrRaw === "string")
+      ? horseOrRaw
+      : (horseOrRaw && horseOrRaw.raw) || "";
+
+    const lines = getLines(raw);
+    if (!lines.length) return "";
+
+    return combine(block1(lines), block2(lines), block3(lines));
   }
 
-  const api = { formatHorseTopSection };
+  const api = { formatHorseTop };
+
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   } else {
