@@ -1,67 +1,174 @@
-// formatter.js  -- strict Brisnet 5-block header layout
+// formatter.js
+// Fully automatic reconstruction of the 5-block header
+// from flattened Brisnet raw text.
 
-function padRight(str, width) {
-  str = (str || "").toString();
-  if (str.length >= width) return str.slice(0, width);
-  return str + " ".repeat(width - str.length);
-}
+(function (global) {
+  'use strict';
 
-function formatHorseHeader(h) {
-  // Column widths (strict Brisnet)
-  const W1 = 44;  // Identity block
-  const W2 = 24;  // Pedigree block
-  const W3 = 18;  // Performance block
-  const W4 = 12;  // Prime Power block
-  const W5 = 10;  // Surface Stats block
+  const COL_WIDTH = 28;
+  const pad = (s, w) => (s + ' '.repeat(w)).slice(0, w);
 
-  // ----- BLOCK 1: Identity -----
-  const block1 = [
-    `${h.post} ${h.name} ${h.tag || ""}`.trim(),
-    h.owner || "",
-    h.odds || "",
-    h.silks || "",
-    `${h.jockey?.name || ""} ${h.jockey?.record || ""}`.trim()
-  ];
+  // -------------------------
+  // MAIN FUNCTION
+  // -------------------------
+  global.buildHorseHeader = function (raw) {
 
-  // ----- BLOCK 2: Pedigree -----
-  const block2 = [
-    `${h.sex ? h.sex.toUpperCase() + "." : ""}  ${h.age || ""}`.trim(),
-    `Sire: ${h.sire || ""}`.trim(),
-    `Dam: ${h.dam || ""}`.trim(),
-    `Brdr: ${h.breeder || ""}`.trim(),
-    `Trnr: ${h.trainer || ""}`.trim()
-  ];
+    // Normalize flattened text
+    const t = raw.replace(/\s+/g, ' ').trim();
 
-  // ----- BLOCK 3: Life + Years -----
-  const block3 = [];
-  if (h.life) block3.push(`Life: ${h.life}`);
-  for (const y of Object.keys(h.by_year)) {
-    block3.push(`${y}: ${h.by_year[y]}`);
-  }
+    // --------------------------------------
+    // EXTRACT BASIC HEADER FIELDS
+    // --------------------------------------
 
-  // ----- BLOCK 4: Prime Power -----
-  const block4 = [ h.prime_power ? `PP ${h.prime_power}` : "" ];
+    // Post, name, tag  (post name (P 5))
+    let post = '', name = '', tag = '';
+    const mHead = t.match(/^(\d+)\s+(.+?)\s+(\([^)]*\))/);
+    if (mHead) {
+      post = mHead[1];
+      name = mHead[2].trim();
+      tag  = mHead[3].trim();
+    }
 
-  // ----- BLOCK 5: Surface Stats (EMPTY for now) -----
-  const block5 = [ "" ];
+    // Owner
+    let owner = '';
+    const ownIdx = t.indexOf('Own:');
+    if (ownIdx !== -1) {
+      const after = t.slice(ownIdx + 4).trim();
+      const stop = after.search(/\b\d+\/\d+\b|[A-Z][A-Z]+/);
+      owner = stop > 0 ? after.slice(0, stop).trim() : after;
+    }
 
-  // Determine max rows among blocks (usually 5)
-  const maxRows = Math.max(block1.length, block2.length, block3.length, block4.length, block5.length);
+    // Odds
+    const oddsMatch = t.match(/\b\d+\/\d+\b/);
+    const odds = oddsMatch ? oddsMatch[0] : '';
 
-  let lines = [];
+    // Jockey
+    let jockeyName = '', jockeyRec = '';
+    const jm = t.match(/\b([A-Z][A-Z]+(?:\s+[A-Z][A-Z]+)*)\s*\(([^)]+)\)/);
+    if (jm) {
+      jockeyName = jm[1].trim();
+      jockeyRec  = jm[2].trim();
+    }
 
-  for (let i = 0; i < maxRows; i++) {
-    const col1 = padRight(block1[i] || "", W1);
-    const col2 = padRight(block2[i] || "", W2);
-    const col3 = padRight(block3[i] || "", W3);
-    const col4 = padRight(block4[i] || "", W4);
-    const col5 = padRight(block5[i] || "", W5);
+    // Silks: between odds and jockey
+    let silks = '';
+    if (odds && jm) {
+      const oPos = t.indexOf(odds);
+      const jPos = t.indexOf(jm[0]);
+      silks = t.slice(oPos + odds.length, jPos).trim();
+    }
 
-    lines.push(col1 + col2 + col3 + col4 + col5);
-  }
+    // Sex/Age
+    let sexAge = '';
+    const sa = t.match(/\bB\.\s*f\.\s*\d+\b/i);
+    if (sa) sexAge = sa[0];
 
-  return lines.join("\n");
-}
+    // Sire / Dam / Brdr / Trnr
+    const extract = (from, to) => {
+      const i1 = t.indexOf(from);
+      if (i1 === -1) return '';
+      const start = i1 + from.length;
+      const end = to ? t.indexOf(to, start) : -1;
+      return (end !== -1 ? t.slice(start, end) : t.slice(start)).trim().replace(/^:/, '').trim();
+    };
 
-// Export for browser
-window.formatHorseHeader = formatHorseHeader;
+    const sire  = extract('Sire', 'Dam:');
+    const dam   = extract('Dam:', 'Brdr:');
+    const brdr  = extract('Brdr:', 'Trnr:');
+    const trnr  = extract('Trnr:', 'Prime Power:') || extract('Trnr:', 'Life:');
+
+    // Life / 2025 / 2024
+    let lifeLine = '', y2025 = '', y2024 = '', weight = '';
+
+    const lifeIdx = t.indexOf('Life:');
+    if (lifeIdx !== -1) {
+      const tail = t.slice(lifeIdx).trim();
+      const tokens = tail.split(' ');
+
+      // Life line
+      const li = tokens.indexOf('Life:');
+      const lifeParts = [];
+      let i = li + 1;
+      while (i < tokens.length && !/^20\d{2}$/.test(tokens[i])) {
+        lifeParts.push(tokens[i]);
+        i++;
+      }
+      lifeLine = 'Life:    ' + lifeParts.join(' ');
+
+      // Year lines
+      const years = tokens.filter(x => /^20\d{2}$/.test(x));
+      if (years.length > 0) {
+        const yi = tokens.indexOf(years[0]);
+        const yParts = [];
+        let j = yi + 1;
+        while (j < tokens.length && !/^20\d{2}$/.test(tokens[j])) {
+          yParts.push(tokens[j]);
+          j++;
+        }
+        y2025 = years[0] + ':    ' + yParts.join(' ');
+      }
+      if (years.length > 1) {
+        const yi2 = tokens.indexOf(years[1]);
+        const y2Parts = [];
+        let k = yi2 + 1;
+        while (k < tokens.length && !/^20\d{2}$/.test(tokens[k])) {
+          y2Parts.push(tokens[k]);
+          k++;
+        }
+        y2024 = years[1] + ':    ' + y2Parts.join(' ');
+      }
+    }
+
+    // Weight = last 3-digit number before surfaces like AQU Fst etc.
+    const w = t.match(/(\d{3})(?=\s+(AQU|Fst|Off|Trf|AW|Dis))/);
+    weight = w ? w[1] : '';
+
+    // -----------------------------------
+    // BUILD 5 BLOCKS (5 LINES EACH)
+    // -----------------------------------
+
+    const b1 = [
+      `${post}        ${name}   ${tag}`.trim(),
+      `          Own: ${owner}`.trim(),
+      `${odds.padEnd(8, ' ')}${silks}`.trim(),
+      `${jockeyName} (${jockeyRec})`.trim(),
+      ''
+    ];
+
+    const b2 = [
+      sexAge,
+      `Sire:  ${sire}`.trim(),
+      `Dam:   ${dam}`.trim(),
+      `Brdr:  ${brdr}`.trim(),
+      `Trnr:  ${trnr}`.trim()
+    ];
+
+    const b3 = [
+      lifeLine,
+      y2025,
+      y2024,
+      weight,
+      ''
+    ];
+
+    const b4 = ['', '', '', '', ''];
+    const b5 = ['', '', '', '', ''];
+
+    // -----------------------------------
+    // FORMAT INTO FINAL 5-COLUMN HEADER
+    // -----------------------------------
+    const lines = [];
+    for (let i = 0; i < 5; i++) {
+      lines.push(
+        pad(b1[i], COL_WIDTH) +
+        pad(b2[i], COL_WIDTH) +
+        pad(b3[i], COL_WIDTH) +
+        pad(b4[i], COL_WIDTH) +
+        pad(b5[i], COL_WIDTH)
+      );
+    }
+
+    return lines.join('\n');
+  };
+
+})(typeof window !== 'undefined' ? window : globalThis);
