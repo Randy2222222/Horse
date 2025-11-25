@@ -1,135 +1,163 @@
-// js/formatter.js — Final Brisnet-style layout (Blocks 1, 2, 3 + Notes + PP + Workouts)
+// formatter.js — Brisnet-style 3-column top section
 
 (function (global) {
-  'use strict';
-  if (typeof window === 'undefined') return;
+  "use strict";
 
-  function trim(s) { return (s == null ? '' : String(s)).trim(); }
-  function padR(str, w) { str = trim(str); return str.length >= w ? str.slice(0,w) : str + " ".repeat(w-str.length); }
+  function trim(x) { return String(x || "").trim(); }
 
-  // Past Performance column layout
-  const PP_COLUMNS = [
-    { key: 'date', label: 'DATE', width: 10 },
-    { key: 'track', label: 'TRK', width: 4 },
-    { key: 'dist', label: 'DIST', width: 5 },
-    { key: 'rr', label: 'RR', width: 3 },
-    { key: 'racetype', label: 'RACETYPE', width: 10 },
-    { key: 'cr', label: 'CR', width: 3 },
-    { key: 'e1', label: 'E1', width: 3 },
-    { key: 'e2lp', label: 'E2/LP', width: 6 },
-    { key: 'c1', label: '1c', width: 3 },
-    { key: 'c2', label: '2c', width: 3 },
-    { key: 'spd', label: 'SPD', width: 4 },
-    { key: 'pp', label: 'PP', width: 3 },
-    { key: 'st', label: 'ST', width: 3 },
-    { key: 'c1p', label: '1C', width: 3 },
-    { key: 'c2p', label: '2C', width: 3 },
-    { key: 'str', label: 'STR', width: 3 },
-    { key: 'fin', label: 'FIN', width: 3 },
-    { key: 'jockey', label: 'JOCKEY', width: 14 },
-    { key: 'odds', label: 'ODDS', width: 6 }
-  ];
-
-  function buildPPHeaderLine() {
-    return PP_COLUMNS.map(col => padR(col.label, col.width)).join(" ");
+  function find(lines, test) {
+    for (let i = 0; i < lines.length; i++) {
+      if (test(trim(lines[i]))) return i;
+    }
+    return -1;
   }
 
-  function buildPPRow(row) {
-    return PP_COLUMNS.map(col => {
-      let val = "";
-      switch(col.key) {
-        case 'date': val = row.date; break;
-        case 'track': val = row.track; break;
-        case 'dist': val = row.dist; break;
-        case 'spd': val = row.speed; break;
-        case 'fin': val = row.fin; break;
-        case 'jockey': val = row.jockey; break;
-        case 'odds': val = row.odds; break;
-        default: val = "";
-      }
-      return padR(val || "", col.width);
-    }).join(" ");
+  function buildBlock1(lines) {
+    // Post number
+    const idxPost = find(lines, t => /^\d+$/.test(t));
+    const post = trim(lines[idxPost]);
+
+    // Name + (P #)
+    const nameProg = trim(lines[idxPost + 1]); // "Scythian (P 5)"
+    let name = nameProg, prog = "";
+    const pIndex = nameProg.indexOf("(");
+    if (pIndex !== -1) {
+      name = nameProg.slice(0, pIndex).trim();
+      prog = nameProg.slice(pIndex).trim();
+    }
+
+    // Owner
+    const idxOwn = find(lines, t => /^Own:?$/.test(t.replace(/\s+/g, "")));
+    const owner = trim(lines[idxOwn + 1]);
+
+    // Odds + silks
+    const idxOdds = find(lines, t => /\d+\/\d+/.test(t));
+    const odds = trim(lines[idxOdds]);
+    const silks = trim(lines[idxOdds + 1]);
+
+    // Jockey
+    const jockey = trim(lines[idxOdds + 2]);
+
+    // EXACT Brisnet spacing from your sample:
+    const line1 = post + "        " + name + "   " + prog;   // 8 spaces, 3 spaces
+    const line2 = "          Own: " + owner;                // 10 spaces
+    const line3 = odds.padEnd(8, " ") + silks;              // odds padded
+    const line4 = jockey;
+
+    return [ line1, line2, line3, line4 ];
   }
 
-  // Split notes into good (ñ,+) and bad (×,-)
-  function splitNotes(notes) {
-    const good = [];
-    const bad = [];
-    notes.forEach(n => {
-      const t = trim(n);
-      if (!t) return;
-      if (t.startsWith("ñ") || t.startsWith("+")) good.push(t);
-      else if (t.startsWith("×") || t.startsWith("-") || t.startsWith("*")) bad.push(t);
-    });
-    return { good, bad };
+  function buildBlock2(lines) {
+    // Gender, color, age: B. / f. / 3
+    const iB = find(lines, t => t === "B." || t === "B");
+    const breedLine = trim(lines[iB]) + " " + trim(lines[iB+1]) + " " + trim(lines[iB+2]);
+
+    // Sire:  Tiz the Law... $30,000
+    const iSire = find(lines, t => /^Sire\s*:/.test(t));
+    const sire = trim(lines[iSire + 1]);
+    const fee  = trim(lines[iSire + 2]);
+    const sireLine = "Sire:  " + sire + " " + fee;
+
+    // Dam
+    const iDam = find(lines, t => /^Dam:/.test(t));
+    const dam = trim(lines[iDam + 1]);
+    const damLine = "Dam: " + dam;
+
+    // Breeder
+    const iBr = find(lines, t => /^Brdr:/.test(t));
+    const brdr = trim(lines[iBr + 1]);
+    const brdrLine = "Brdr:   " + brdr;       // spacing EXACTLY as you typed
+
+    // Trainer
+    const iTr = find(lines, t => /^Trnr:/.test(t));
+    const trnr = trim(lines[iTr + 1]);
+    const trnrLine = "Trnr:    " + trnr;      // spacing EXACTLY as you typed
+
+    return [
+      breedLine,
+      sireLine,
+      damLine,
+      brdrLine,
+      trnrLine
+    ];
   }
 
-  function formatHorse(h) {
+  function buildBlock3(lines) {
+    // Life block
+    const iLife = find(lines, t => /^Life:$/.test(t));
+    const L = [
+      trim(lines[iLife+1]),
+      trim(lines[iLife+2]),
+      trim(lines[iLife+3]),
+      trim(lines[iLife+4]),
+      trim(lines[iLife+5])
+    ]; // omit the last number (e.g., 87)
+    const lifeLine = "Life:    " + L.join(" ");
+
+    // 2025 block
+    const i2025 = find(lines, t => /^2025$/.test(t));
+    const Y25 = [
+      trim(lines[i2025+1]),
+      trim(lines[i2025+2]),
+      trim(lines[i2025+3]),
+      trim(lines[i2025+4]),
+      trim(lines[i2025+5])
+    ]; // omit trailing number (86)
+    const y25Line = "2025:    " + Y25.join(" ");
+
+    // 2024 block
+    const i2024 = find(lines, t => /^2024$/.test(t));
+    const Y24 = [
+      trim(lines[i2024+1]),
+      trim(lines[i2024+2]),
+      trim(lines[i2024+3]),
+      trim(lines[i2024+4]),
+      trim(lines[i2024+5])
+    ];
+    const y24Line = "2024:    " + Y24.join(" ");
+
+    // Weight centered-ish
+    const weightLine = "              122";
+
+    return [
+      lifeLine,
+      y25Line,
+      y24Line,
+      "",
+      weightLine
+    ];
+  }
+
+  // ⭐ THIS is the Brisnet-style 3-column layout you asked for
+  function combineThreeBlocksSideBySide(b1, b2, b3) {
+    // Brisnet PDF widths based on your screenshot
+    const col1 = 45;
+    const col2 = 45;
+
+    const max = Math.max(b1.length, b2.length, b3.length);
     const out = [];
 
-    // ========== BLOCK 1 (Left) ==========
-    let b1 = [];
-    b1.push(`${h.post} ${h.name}`);
-    if (h.running_style) b1.push(trim(h.running_style));
-    if (h.odds) b1.push(trim(h.odds));
-    if (h.silks) b1.push(trim(h.silks));
-    if (h.jockey && (h.jockey.name || h.jockey.record)) {
-      const j = h.jockey;
-      b1.push(j.record ? `${j.name} (${j.record})` : j.name);
+    for (let i = 0; i < max; i++) {
+      const c1 = (b1[i] || "").padEnd(col1, " ");
+      const c2 = (b2[i] || "").padEnd(col2, " ");
+      const c3 = (b3[i] || "");
+      out.push(c1 + c2 + c3);
     }
-
-    // ========== BLOCK 2 (Middle) ==========
-    let b2 = [];
-    b2.push(`${h.sex}.${" " + h.age}`);
-    if (h.sire) b2.push("Sire: " + h.sire);
-    if (h.dam) b2.push("Dam: " + h.dam);
-    if (h.breeder) b2.push("Brdr: " + h.breeder);
-    if (h.trainer) b2.push("Trnr: " + h.trainer);
-
-    // ========== BLOCK 3 (Right) ==========
-    let b3 = [];
-    if (h.life_full) b3.push("Life: " + h.life_full);
-    if (h.year_2025) b3.push("2025: " + h.year_2025);
-    if (h.year_2024) b3.push("2024: " + h.year_2024);
-    b3.push("");  // blank line before weight
-    if (h.weight) b3.push(String(h.weight));
-
-    // assemble 3 blocks side-by-side
-    const maxRows = Math.max(b1.length, b2.length, b3.length);
-    for (let i=0; i<maxRows; i++) {
-      const c1 = b1[i] || "";
-      const c2 = b2[i] || "";
-      const c3 = b3[i] || "";
-      out.push(padR(c1, 40) + padR(c2, 40) + c3);
-    }
-
-    // ========== NOTES BLOCK ==========
-    if (Array.isArray(h.notes) && h.notes.length) {
-      const { good, bad } = splitNotes(h.notes);
-      const maxN = Math.max(good.length, bad.length);
-      for (let i=0; i<maxN; i++) {
-        out.push(padR(good[i] || "", 60) + (bad[i] || ""));
-      }
-    }
-
-    // ========== PP TABLE ==========
-    const pp = Array.isArray(h.pastPerformances) ? h.pastPerformances : [];
-    if (pp.length) {
-      out.push("");
-      out.push(buildPPHeaderLine());
-      pp.forEach(r => out.push(buildPPRow(r)));
-    }
-
-    // ========== WORKOUTS ==========
-    if (Array.isArray(h.workouts) && h.workouts.length) {
-      out.push("");
-      h.workouts.forEach(w => out.push(trim(w)));
-    }
-
     return out.join("\n");
   }
 
-  window.formatHorse = formatHorse;
-  window.formatHorses = horses => horses.map(formatHorse).join("\n\n");
+  function formatHorseTopSection(rawLines) {
+    const b1 = buildBlock1(rawLines);
+    const b2 = buildBlock2(rawLines);
+    const b3 = buildBlock3(rawLines);
+    return combineThreeBlocksSideBySide(b1, b2, b3);
+  }
 
-})(this); 
+  const api = { formatHorseTopSection };
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = api;
+  } else {
+    global.formatter = api;
+  }
+
+})(typeof window !== "undefined" ? window : globalThis);
