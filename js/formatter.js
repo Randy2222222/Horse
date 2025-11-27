@@ -1,20 +1,25 @@
 // formatter.js
 // Fully automatic reconstruction of the 5-block header
 // from flattened Brisnet raw text.
+function (global) {
+  'use strict';
+  if (typeof window === 'undefined') return;
 
+  function trim(s) { return (s == null ? '' : String(s)).trim(); }
+  function padR(str, w) { str = trim(str); return str.length >= w ? str.slice(0,w) : str + " ".repeat(w-str.length); }
 (function (global) {
   'use strict';
-
-  const COL_WIDTH = 28;
-  const pad = (s, w) => (s + ' '.repeat(w)).slice(0, w);
+// changed below to above
+ // const COL_WIDTH = 28;
+  //const pad = (s, w) => (s + ' '.repeat(w)).slice(0, w);
 
   // -------------------------
   // MAIN FUNCTION
   // -------------------------
-  global.buildHorseHeader = function (raw) {
+  //global.buildHorseHeader = function (raw) {
 
     // Normalize flattened text
-    const t = raw.replace(/\s+/g, ' ').trim();
+   // const t = raw.replace(/\s+/g, ' ').trim();
 
     // --------------------------------------
     // EXTRACT BASIC HEADER FIELDS
