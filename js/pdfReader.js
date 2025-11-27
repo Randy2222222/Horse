@@ -138,8 +138,8 @@ if (window.parseHorseBlockFull && window._pdfReader.parsedPP) {
   // New code for fomatting ⬇️
   // ---------- FORMATTER ----------
 try {
- //console.log("READER OBJECT:", window._pdfReader);🔥
- // console.log("FULL TEXT:", window._pdfReader.fullText);🔥
+ console.log("READER OBJECT:", window._pdfReader);
+ console.log("FULL TEXT:", window._pdfReader.fullText);
   const horses = parseText(window._pdfReader.fullText);
   const output = formatHorses(horses);
   // show in your output box
