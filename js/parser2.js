@@ -125,3 +125,21 @@
     }
     return out;
   }
+
+  // Past perfomance anchor
+  // Detect a PP row using your exact anchor pattern:
+// DD + Mon + YY  (Mon includes Jly for July)
+const PP_ANCHOR = /^\d{2}(Jan|Feb|Mar|Apr|May|Jun|Jly|Aug|Sep|Oct|Nov|Dec)\d{2}/;
+
+function extractPastPerformances(lines) {
+  const ppRows = [];
+
+  for (const line of lines) {
+    const clean = line.trim();
+    if (PP_ANCHOR.test(clean)) {
+      ppRows.push(clean);
+    }
+  }
+
+  return ppRows;
+}
