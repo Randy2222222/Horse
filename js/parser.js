@@ -191,39 +191,6 @@
 
   // Split into horse blocks using the anchor; preserve raw text
   function parsePPTable(text) {
-    // Add Header with cuts
-        // ---------- CLEAN TOP-OF-PAGE BLOCK BEFORE HORSE PARSING ----------
-     //  if (!text) return [];
-
-    // Normalize CRLF → LF
-  // let t = text.replace(/\r/g, '\n');
-
-    // 1) Strip COPYRIGHT + any invisible pre-header junk
-   // t = t.replace(/^[\s\S]{0,300}(?=Aqueduct)/i, '');
-
-    // 2) Extract real header (one full line) 
-   // let headerLine = '';
-   // const headerMatch = t.match(/^(Aqueduct[^\n]+)/i);
-   // if (headerMatch) headerLine = headerMatch[1].trim();
-
-    // 3) Remove the 4 TOP BLOCKS (Speed Last Race / Prime Power / Class Rating / Best Speed)
-  //  t = t.replace(/#\s+Speed[\s\S]+?National Archive\s+85/, '');
-
-    // 4) Remove PARS block
- //  t = t.replace(/E1[\s\S]+?88/, '');
-
-    // 5) Extract FOOTER paragraph (the big description block)
-   // let footer = '';
-    // const footMatch = t.match(/(\d{1,2}\…\s+Mile[\s\S]+?Post Time:[^\n]+)/i);
-    // if (footMatch) footer = footMatch[1].trim();
-
-    // 6) Save results so pdfReader can output them
-   // window._brisHeader = headerLine;
-   // window._brisFooter = footer;
-
-    // Replace original text with stripped version
-    //text = t;
-    // Header cuts ends
     if (!text) return [];
     const t = text.replace(/\r/g, '\n');
     const anchors = [];
