@@ -304,7 +304,7 @@
       dam: dam || '',
       breeder: breeder || '',
       trainer: trainer || '',
-      prime_power: prime_power || '', 
+  //    prime_power: prime_power || '', 
       life: lifeYears.life || '',
       by_year: lifeYears.by_year || {},
       surfaces,
