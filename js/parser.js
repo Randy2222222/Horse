@@ -69,11 +69,11 @@
     return { sex: '', age: '' };
   }
     
-//  function parsePrimePower(block) {
-  //  if (!block) return '';
-  //  const m = block.match(/Prime Power:\s*([0-9.]+\s*(?:\([^)]*\))?)/i);
-   // return m ? trim(m[1]) : '';
-// }
+  function parsePrimePower(block) {
+     if (!block) return '';
+     const m = block.match(/Prime Power:\s*([0-9.]+\s*(?:\([^)]*\))?)/i);
+    return m ? trim(m[1]) : '';
+  }
 
   function parseLifeYears(block) {
     const out = { life: '', by_year: {} };
@@ -274,7 +274,7 @@
     const dam = firstLineAfter('Dam', raw);
     const breeder = firstLineAfter('Brdr', raw) || firstLineAfter('Brdr:', raw);
     const trainer = firstLineAfter('Trnr', raw) || firstLineAfter('Trnr:', raw);
-  //  const prime_power = parsePrimePower(raw); 
+    const prime_power = parsePrimePower(raw); 
     const lifeYears = parseLifeYears(raw);
     const workouts = parseWorkouts(raw);
     const stat_lines = parseStatLines(raw);
@@ -304,7 +304,7 @@
       dam: dam || '',
       breeder: breeder || '',
       trainer: trainer || '',
-  //    prime_power: prime_power || '', 
+      prime_power: prime_power || '', 
       life: lifeYears.life || '',
       by_year: lifeYears.by_year || {},
       surfaces,
