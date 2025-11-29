@@ -145,7 +145,7 @@ function extractPastPerformances(lines) {
 }
 
  function parsePPTable(text) {
-   f (!text) return [];
+   if (!text) return [];
     const t = text.replace(/\r/g, '\n');
     const anchors = [];
     let m;
