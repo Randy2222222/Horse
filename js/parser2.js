@@ -131,7 +131,7 @@
 // DD + Mon + YY  (Mon includes Jly for July)
 const PP_ANCHOR = /^\d{2}(Jan|Feb|Mar|Apr|May|Jun|Jly|Aug|Sep|Oct|Nov|Dec)\d{2}/;
 
-function extractPastPerformances(lines) {
+function PastPerformances(lines) {
   const ppRows = [];
 
   for (const line of lines) {
