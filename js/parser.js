@@ -274,7 +274,7 @@
     const dam = firstLineAfter('Dam', raw);
     const breeder = firstLineAfter('Brdr', raw) || firstLineAfter('Brdr:', raw);
     const trainer = firstLineAfter('Trnr', raw) || firstLineAfter('Trnr:', raw);
-    const prime_power = parsePrimePower(raw); 
+  //  const prime_power = parsePrimePower(raw); 
     const lifeYears = parseLifeYears(raw);
     const workouts = parseWorkouts(raw);
     const stat_lines = parseStatLines(raw);
