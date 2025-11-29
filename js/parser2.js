@@ -233,7 +233,7 @@ function PastPerformances(lines) {
     const workouts = parseWorkouts(raw);
     const stat_lines = parseStatLines(raw);
     const notes = parseNotes(raw);
-    const pastPerformances = parsePastPerformances(raw);
+    const pastPerformances = parsePastPerformances(raw.split(/\r?\n/));
 
     // surfaces: gather lines with Fst/Off/Trf/AQU etc and their following data
     const surfaces = {};
