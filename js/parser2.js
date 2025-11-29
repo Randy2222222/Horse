@@ -143,3 +143,5 @@ function extractPastPerformances(lines) {
 
   return ppRows;
 }
+
+ function parsePPTable(text) {
