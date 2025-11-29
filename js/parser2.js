@@ -145,3 +145,170 @@ function extractPastPerformances(lines) {
 }
 
  function parsePPTable(text) {
+   f (!text) return [];
+    const t = text.replace(/\r/g, '\n');
+    const anchors = [];
+    let m;
+    while ((m = HORSE_ANCHOR.exec(t)) !== null) {
+      anchors.push({ idx: m.index, post: Number(m[1]), name: trim(m[2]) });
+    }
+    if (!anchors.length) {
+      // fallback: try lines like "1\n\nName" (multiline headers)
+      const fallbackRe = /(?:^|\n)\s*([1-9]|1[0-9]|20)\s*\n+\s*([A-Za-z0-9\/'’.\-\s]+)\s*\n/ig;
+      let fm;
+      const fallback = [];
+      while ((fm = fallbackRe.exec(t)) !== null) {
+        fallback.push({ idx: fm.index, post: Number(fm[1]), name: trim(fm[2]) });
+      }
+      if (fallback.length) {
+        const blocks = [];
+        for (let i = 0; i < fallback.length; i++) {
+          const start = fallback[i].idx;
+          const end = (i + 1 < fallback.length) ? fallback[i + 1].idx : t.length;
+          blocks.push({ post: fallback[i].post, name: fallback[i].name, raw: trim(t.slice(start, end)) });
+        }
+        return blocks;
+      }
+      // no anchors: return the whole text as a single block
+      return [{ post: null, name: null, raw: t }];
+    }
+    const blocks = [];
+    for (let i = 0; i < anchors.length; i++) {
+      const start = anchors[i].idx;
+      const end = (i + 1 < anchors.length) ? anchors[i + 1].idx : t.length;
+      const slice = t.slice(start, end);
+      blocks.push({ post: anchors[i].post, name: anchors[i].name, raw: trim(slice) });
+    }
+    return blocks;
+  }
+
+  // Parse a single horse block object OR accept a raw string
+  function parseHorseBlock(blockOrRaw) {
+    // Accept either: blockObj {post,name,raw} OR raw string
+    let blockObj = null;
+    if (!blockOrRaw) return null;
+    if (typeof blockOrRaw === 'string') {
+      blockObj = { post: null, name: null, raw: blockOrRaw };
+    } else {
+      blockObj = Object.assign({ post: null, name: null, raw: '' }, blockOrRaw);
+    }
+    const raw = blockObj.raw || '';
+
+    // header
+    const headerLine = raw.split(/\r?\n/).slice(0, 3).join(' ');
+    const headerMatch = headerLine.match(/^\s*(\d+)\s+(.+?)\s*(\([^\)]*\))?/);
+    const post = blockObj.post || (headerMatch ? Number(headerMatch[1]) : null);
+    const name = blockObj.name || (headerMatch ? trim(headerMatch[2]) : '');
+    const tag = headerMatch && headerMatch[3] ? headerMatch[3] : '';
+
+    // basic items
+    const owner = firstLineAfter('Own', raw) || firstLineAfter('Owner', raw);
+    const silks = (() => {
+      // try line(s) immediately after owner or on same header zone
+      const top = raw.split(/\r?\n/).slice(0, 8).map(l => trim(l)).filter(Boolean);
+      // the silks line typically follows owner/odds; pick first comma-containing long line
+      for (const L of top) {
+        if (/,/.test(L) && L.length > 8 && !/^CIVACI|^VELAZQUEZ|^[A-Z]{2,20}\s*\(/.test(L)) return L;
+      }
+      // or pick the first long line after the owner token
+      if (owner) {
+        const parts = raw.split(owner);
+        if (parts[1]) {
+          const cand = parts[1].split(/\r?\n/).map(l => trim(l)).filter(Boolean)[0] || '';
+          if (cand && cand.length > 6) return cand;
+        }
+      }
+      return '';
+    })();
+
+    const odds = parseOdds(headerLine + '\n' + raw.split(/\r?\n/).slice(0, 4).join(' '));
+    const jockey = parseJockey(raw);
+    const { sex, age } = parseSexAge(raw);
+    const sire = firstLineAfter('Sire', raw);
+    const dam = firstLineAfter('Dam', raw);
+    const breeder = firstLineAfter('Brdr', raw) || firstLineAfter('Brdr:', raw);
+    const trainer = firstLineAfter('Trnr', raw) || firstLineAfter('Trnr:', raw);
+    const prime_power = parsePrimePower(raw); 
+    const lifeYears = parseLifeYears(raw);
+    const workouts = parseWorkouts(raw);
+    const stat_lines = parseStatLines(raw);
+    const notes = parseNotes(raw);
+    const pastPerformances = parsePastPerformances(raw);
+
+    // surfaces: gather lines with Fst/Off/Trf/AQU etc and their following data
+    const surfaces = {};
+    const surfaceRe = /^\s*(AQU|Fst|Off|Dis|Trf|AW|ft|fm|yl)\b.*$/gim;
+    let sm;
+    while ((sm = surfaceRe.exec(raw)) !== null) {
+      const key = trim(sm[1]);
+      // capture that whole line and the next few tokens after
+      const line = raw.slice(sm.index, Math.min(raw.length, sm.index + 160)).split(/\r?\n/)[0];
+      if (!surfaces[key]) surfaces[key] = [];
+      surfaces[key].push(trim(line));
+    }
+
+    return {
+      post, name, tag, raw,
+      owner: owner || '',
+      silks: silks || '',
+      odds: odds || '',
+      jockey,
+      sex, age,
+      sire: sire || '',
+      dam: dam || '',
+      breeder: breeder || '',
+      trainer: trainer || '',
+      prime_power: prime_power || '', 
+      life: lifeYears.life || '',
+      by_year: lifeYears.by_year || {},
+      surfaces,
+      stat_lines,
+      workouts,
+      notes,
+      pastPerformances
+    };
+  }
+
+  // parse full text returning all horses parsed (convenience)
+  function parseText(text) {
+    const blocks = parsePPTable(text);
+    const horses = blocks.map(b => {
+      const parsed = parseHorseBlock(b);
+      return parsed;
+    });
+    return horses;
+  }
+
+  // ---------- Exports ----------
+  // Browser exports
+  try {
+    if (typeof window !== 'undefined') {
+      window.parsePPTable = parsePPTable;
+      window.parseHorseBlockFull = function (blockOrRaw) {
+        // accept either block {post,name,raw} or raw string
+        if (!blockOrRaw) return null;
+        if (typeof blockOrRaw === 'string') return parseHorseBlock({ post: null, name: null, raw: blockOrRaw });
+        return parseHorseBlock(blockOrRaw);
+      };
+      window.parseText = parseText;
+    }
+  } catch (e) { /* ignore */ }
+
+  // Node exports (so you can `node parser.js /path/file`)
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { parsePPTable, parseHorseBlock: parseHorseBlock, parseText };
+    // Optional CLI: node js/parser.js /path/to/brisnet_raw.txt
+    if (require && require.main === module) {
+      const fs = require('fs');
+      const f = process.argv[2] || '/mnt/data/brisnet_raw.txt'; // your uploaded path if using Node
+      if (!fs.existsSync(f)) {
+        console.error('File not found:', f);
+        process.exit(2);
+      }
+      const raw = fs.readFileSync(f, 'utf8');
+      const out = parseText(raw);
+      console.log(JSON.stringify(out, null, 2));
+    }
+  }
+
+})(typeof window !== 'undefined' ? window : global);
