@@ -69,11 +69,11 @@
     return { sex: '', age: '' };
   }
     
-  function parsePrimePower(block) {
-    if (!block) return '';
-    const m = block.match(/Prime Power:\s*([0-9.]+\s*(?:\([^)]*\))?)/i);
-    return m ? trim(m[1]) : '';
- }
+//  function parsePrimePower(block) {
+  //  if (!block) return '';
+  //  const m = block.match(/Prime Power:\s*([0-9.]+\s*(?:\([^)]*\))?)/i);
+   // return m ? trim(m[1]) : '';
+// }
 
   function parseLifeYears(block) {
     const out = { life: '', by_year: {} };
