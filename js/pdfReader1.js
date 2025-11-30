@@ -1,40 +1,52 @@
-// pdfReader1.js — SIMPLE RAW TEXT EXTRACTOR ONLY
+// pdfReader1.js
+// Clean, simple PDF loader with DEV MODE output
 
-// Load PDF → return raw text line-by-line
-async function loadPDF(file) {
-  const array = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: array }).promise;
+import { applyGlyphMap } from "./glyphMap.js";
 
-  let text = "";
+const DEV_MODE = true;   // turn off later when finished
+
+// Load PDF and return full extracted text
+export async function loadPDF(file) {
+  const pdf = await pdfjsLib.getDocument({ url: URL.createObjectURL(file) }).promise;
+  let fullText = "";
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-
-    content.items.forEach(item => {
-      text += item.str + "\n";   // RAW TEXT ONLY — NO PARSING
-    });
+    const strings = content.items.map(item => item.str);
+    fullText += strings.join("\n") + "\n";
   }
 
-  return text;
+  return fullText;
 }
 
-// Run Create button handler
-document.getElementById("runAnalysis").addEventListener("click", async () => {
-  const file = document.getElementById("pdfFile").files[0];
-  const out = document.getElementById("output");
+// Main reader function your button will call
+export async function readPDFAndDecode(file) {
+  const rawText = await loadPDF(file);
 
-  if (!file) {
-    out.textContent = "Please select a PDF first.";
-    return;
+  // DEV MODE: show raw text panel
+  if (DEV_MODE) {
+    const rawOut = document.getElementById("devRawOutput");
+    if (rawOut) rawOut.textContent = rawText;
   }
 
-  out.textContent = "Reading PDF...";
+  // Remove stray UTF-8 junk (Â)
+  let cleanText = rawText.replace(/Â/g, "");
 
-  try {
-    const rawText = await loadPDF(file);
-    out.textContent = rawText;   // DISPLAY RAW TEXT ONLY
-  } catch (err) {
-    out.textContent = "Error reading PDF:\n" + err;
+  // DEV MODE: show cleaned text
+  if (DEV_MODE) {
+    const cleanOut = document.getElementById("devCleanOutput");
+    if (cleanOut) cleanOut.textContent = cleanText;
   }
-});
+
+  // Decode Brisnet symbols
+  const decodedText = applyGlyphMap(cleanText);
+
+  // DEV MODE: show decoded text panel
+  if (DEV_MODE) {
+    const decodedOut = document.getElementById("devDecodedOutput");
+    if (decodedOut) decodedOut.textContent = decodedText;
+  }
+
+  return decodedText;   // parser will use this next
+}
