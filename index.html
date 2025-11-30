@@ -58,20 +58,20 @@
 </div>
 
   <!-- Your JS Files -->
- <!-- <script src="js/pdfReader.js"></script>-->
-  <!--<script src="js/parser2.js"></script>-->
-  <script src="js/pdfReader1.js"></script>
-  <!--<script src="js/formatter.js"></script>-->
-  <!-- adding convert pdf to text script
-  <script>
-document.getElementById("showText").addEventListener("click", () => {
-  const win = window.open("", "_blank");
-  win.document.write("<pre style='white-space: pre-wrap; font-size: 12px;'>"
-    + (window._pdfReader.pdfText || "NO TEXT LOADED")
-    + "</pre>");
-  win.document.close();
+ <script type="module">
+import { readPDFAndDecode } from "./js/pdfReader1.js";
+
+document.getElementById("runAnalysis").addEventListener("click", async () => {
+  const file = document.getElementById("pdfFile").files[0];
+  if (!file) return alert("Select a PDF first!");
+
+  const decoded = await readPDFAndDecode(file);
+  
+  // Later we pass decoded into parsePP
+  // const data = parsePP(decoded);
+  // console.log(data);
 });
- </script> -->
+</script>
   <script src="js/horseGraph.js"></script>
   <script src="js/jockeyLoader.js"></script>
   <script src="js/calls.js"></script>
