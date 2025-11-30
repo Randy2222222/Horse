@@ -69,17 +69,21 @@
 
   <!-- Your JS Files -->
  <script type="module">
-import { readPDFAndDecode } from "./js/pdfReader.js";
+  import { readPDFAndDecode } from "./js/pdfReader.js";
+  import { parsePP } from "./js/parsePP.js";
 
-document.getElementById("runAnalysis").addEventListener("click", async () => {
+  document.getElementById("runAnalysis").addEventListener("click", async () => {
   const file = document.getElementById("pdfFile").files[0];
   if (!file) return alert("Select a PDF first!");
 
   const decoded = await readPDFAndDecode(file);
-  
-  // Later we pass decoded into parsePP
-  // const data = parsePP(decoded);
-  // console.log(data);
+
+  // PHASE 1 parse
+  const structure = parsePP(decoded);
+
+  // Show structure in dev panel
+  const out = document.getElementById("devStructOutput");
+  if (out) out.textContent = JSON.stringify(structure, null, 2);
 });
 </script>
   <script src="js/horseGraph.js"></script>
